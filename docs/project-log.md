@@ -22,7 +22,6 @@ Each row records work done on the project. Log every hour, including self-learni
 
 ## Notes
 
-- Hours are honest estimates including time spent debugging, reading, and setup.
-- The 140-hour total per person by Splashdown includes self-learning.
+- Hours include time spent debugging, reading, setup and self-learning.
 - Tech stack pivot from React Native (mobile) to Next.js (web) made on 12 May; mobile setup hours retained as they reflect real time spent.
 - `AGENTS.md` and `CLAUDE.md` files from the `create-next-app` scaffold were removed in commit 448f0a6 as we are not using AI coding agents for code generation. AI is being used only for self-learning and tooling/debugging support (e.g. environment setup), in line with Orbital policy.
