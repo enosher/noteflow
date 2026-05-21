@@ -6,19 +6,16 @@ Each row records work done on the project. Log every hour, including self-learni
 
 | Date       | Person | Task                                                                  | Hours |
 |------------|--------|-----------------------------------------------------------------------|-------|
-| 2026-05-09 | A      | Initial tech stack setup (mobile, scrapped)                           | 4.0   |
+| 2026-05-09 | A      | Initial tech stack setup (mobile, scrapped)                           | 3.0   |
 | 2026-05-09 | B      | Initial tech stack setup (mobile, scrapped)                           | 3.0   |
-| 2026-05-12 | A      | Programme overview reading, Next.js scaffold (planning)               | 5.0   |
+| 2026-05-12 | A      | Programme overview reading, Next.js scaffold (planning)               | 2.0   |
 | 2026-05-12 | B      | Programme overview reading                                            | 2.0   |
-| 2026-05-13 | A      | Phase 0 web setup: Supabase project                                   | 3.0   |
-| 2026-05-14 | A      | Poster design (Canva)                                                 | 3.0   |
-| 2026-05-16 | A      | Poster polish, team info, em-dash fixes                               | 1.5   |
-| 2026-05-16 | B      | Video slides (rebuilt from AI draft)                                  | 2.0   |
-| 2026-05-17 | A      | Video voiceover and editing                                           | 2.5   |
-| 2026-05-17 | B      | Video voiceover (closing)                                             | 1.0   |
-| 2026-05-18 | A      | Liftoff submission                                                    | 0.5   |
-| 2026-05-18 | B      | Liftoff submission                                                    | 0.5   |
-| 2026-05-21 | A      | Next.js project setup: scaffold, debug HTTPS_PROXY (Clash) hang, push to GitHub | 3.5   |
+| 2026-05-13 | A      | Phase 0 web setup: Supabase project                                   | 1.5   |
+| 2026-05-14 | A      | Poster design (Canva)                                                 | 2.0   |
+| 2026-05-16 | A      | Poster polish                                                         | 0.5   |
+| 2026-05-16 | B      | Video slides                                                          | 1.5   |
+| 2026-05-17 | B      | Video voiceover and editing                                           | 1.5   |
+| 2026-05-21 | A      | Next.js project setup: scaffold, debug HTTPS_PROXY (Clash) hang, push to GitHub | 2.5   |
 
 ## Notes
 
