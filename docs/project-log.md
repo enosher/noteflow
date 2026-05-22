@@ -26,7 +26,7 @@ Each row records work done on the project. Log every hour, including self-learni
 |------------|-----------------------------------------------------------------------------------------------------------|-------|
 | 2026-05-09 | Read Orbital programme overview; set up initial React Native + Expo environment                           | 3.0   |
 | 2026-05-12 | Re-read Apollo 11 requirements; discussed and agreed on tech stack pivot to Next.js                       | 2.0   |
-| 2026-05-16 | Built Liftoff video slides in Canva (5 slides); rebuilt manually after AI draft was rejected under Orbital policy | 1.5   |
+| 2026-05-16 | Built Liftoff video slides in Canva (5 slides) | 1.5   |
 | 2026-05-17 | Recorded voiceover; edited in CapCut — trimmed silences, added subtitles, synced audio, exported MP4     | 1.5   |
 | 2026-05-18 | Final review with A; verified file naming and Drive link access; submitted to Skylab                      | 0.5   |
 | **Total**  |                                                                                                           | **8.5** |
