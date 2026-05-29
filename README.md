@@ -27,7 +27,7 @@ The following tables are planned for Milestone 2 implementation:
 - `display_name` (text)
 - `created_at` (timestamp)
 
-**modules** — top-level academic unit (e.g. CS2030)
+**modules** — academic unit (e.g. CS2030)
 - `id` (UUID, primary key)
 - `user_id` (UUID, foreign key → profiles)
 - `code` (text, e.g. "CS2030")
