@@ -17,8 +17,8 @@ Apollo 11
 
 | Member | Role |
 |--------|------|
-| A      | Full-stack development, project setup, deployment |
-| B      | Full-stack development, database design, documentation |
+| Spencer Ting      | Full-stack development, project setup, deployment |
+| Enosh Er      | Full-stack development, database design, documentation |
 
 ## Motivation
 
