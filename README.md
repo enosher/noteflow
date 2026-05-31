@@ -1,8 +1,126 @@
+# NoteFlow
+
+![Apollo 11](https://img.shields.io/badge/Orbital-Apollo%2011-blue)
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![Supabase](https://img.shields.io/badge/Supabase-green)
+![Vercel](https://img.shields.io/badge/Vercel-deployed-black)
+
+A web app that helps university students organise study materials by topic, track quiz performance, and get adaptive practice recommendations that target their weak areas.
+
+**Live demo:** https://noteflow-liart.vercel.app
+
+## Targeted Level of Achievement
+
+Apollo 11
+
+## Team
+
+| Member | Role |
+|--------|------|
+| A      | Full-stack development, project setup, deployment |
+| B      | Full-stack development, database design, documentation |
+
+## Motivation
+
+University students in NUS face a common but underappreciated problem during revision: their study materials are fragmented across too many different places.
+
+Lecture slides are stored in LumiNUS or Canvas folders. Tutorial answers are buried in PDFs downloaded weeks ago. Personal summary notes are scattered across Notion, OneNote, or handwritten notebooks. Practicequestions are saved in random locations — some in past-year paper PDFs, some in self-made documents, some in online question banks.
+
+When exam season arrives, students spend a significant portion of their revision time just *finding* the right materials rather than actually studying. They struggle to know what to revise next, often defaulting to topics they are already comfortable with while unknowingly neglecting their weak areas.
+
+The result: revision becomes inefficient, stressful, and poorly targeted - exactly when focus and efficiency matter most.
+
+Existing tools address parts of this problem but not all of it. Note-taking apps like Notion organise materials but have no quiz or performance tracking. Flashcard apps like Anki track performance but are disconnected from a student's own notes and materials. There is no single tool that connects a student's study materials, their quiz attempts, and their weak areas into one adaptive system.
+
+NoteFlow is built to fill this gap.
+
+## Aim
+
+We aim to develop a web application that:
+
+1. Allows students to organise all study materials (notes, questions, links, summaries) in a structured hierarchy of modules, topics, and subtopics
+2. Records quiz attempts and tracks performance accuracy per topic over time
+3. Automatically identifies weak topics based on a student's quiz history
+4. Recommends targeted practice questions weighted by weak areas, recent mistakes, and revision frequency
+5. Provides a revision dashboard giving students a clear picture of their strengths, weaknesses, and progress
+
+The goal is to help students spend more time improving what they don't know, and less time searching for materials or repeating what they already do.
+
+## User Stories
+
+1. **As a student**, I want to organise my notes by module and topic so that I can find relevant materials quickly during revision without searching through multiple apps or folders.
+
+2. **As a student**, I want to add practice questions to a topic so that my study materials and practice questions are linked together in one place, making revision more focused.
+
+3. **As a student**, I want to attempt quizzes and have my answers recorded so that I can track my performance over time and understand where I am improving and where I am still struggling.
+
+4. **As a student**, I want to see which topics I struggle with most so that I can prioritise my revision time on weak areas instead of wasting time on topics I already understand well.
+
+5. **As a student**, I want to receive adaptive practice recommendations so that the questions I practise are targeted at my weaknesses rather than randomly selected, making every practice session more effective.
+
+## Proposed Core Features
+
+### 1. Module and Topic Organisation
+
+Students create a module for each subject (e.g. CS2030, MA1521). Within each module, they create topics (e.g. Inheritance, Polymorphism) and subtopics (e.g. Method Overriding, Abstract Classes).
+
+Under each subtopic, students can store:
+- **Notes** — written summaries, lecture content, personal annotations
+- **Practice questions** — with answers and difficulty ratings
+- **Important links** — references, useful resources
+- **Key formulas and summaries** — quick-reference content
+
+The hierarchy (Module → Topic → Subtopic) mirrors how university subjects are structured, making it intuitive for students to organise and retrieve their materials.
+
+### 2. Quiz Attempt Recording and Weak Topic Detection
+
+When a student attempts a practice question, the system records:
+- Whether the answer was correct or incorrect
+- Time taken to answer
+- The topic and subtopic the question belongs to
+
+From this data, the system calculates accuracy per topic and identifies weak topics — defined as topics where accuracy falls below a threshold or where recent attempts show consistent mistakes.
+
+Students can view a revision dashboard showing:
+- Strong topics (high accuracy)
+- Weak topics (low accuracy, flagged for revision)
+- Progress over time (accuracy trends)
+
+### 3. Adaptive Practice Recommendations
+
+The recommendation system suggests practice questions based on four weighted factors:
+
+1. **Weak topics** — topics with low accuracy are prioritised
+2. **Recent mistakes** — questions answered incorrectly recently are 
+   surfaced again
+3. **Revision frequency** — topics not revised recently are boosted 
+   (spaced repetition principle)
+4. **Performance history** — overall accuracy trend influences weighting
+
+The result is a personalised practice session that adapts to each student's current knowledge state, ensuring they spend more time on what they don't know and less time repeating what they already do.
+
+## Proposed Extension Features
+
+### 4. Adaptive Practice Generation
+AI-assisted generation of new practice questions based on the student's notes and identified weak areas. Students can request additional questions for a specific topic without manually creating them.
+
+### 5. Spaced Repetition Review
+A scheduled review system that surfaces notes and questions at scientifically optimal intervals to maximise long-term retention. Based on the SM-2 spaced repetition algorithm.
+
+### 6. Concept Graph and Prerequisite Mapping
+A visual graph showing relationships between topics — for example, understanding Polymorphism requires first understanding Inheritance. The system uses this map to ensure students master prerequisites before moving to dependent topics.
+
+### 7. Collaborative Study Groups
+Students can share modules and question sets with classmates, enabling collaborative note-taking and shared practice question banks within a study group.
+
+### 8. Study Analytics Dashboard
+Advanced analytics showing study session patterns, time spent per topic, performance trends over weeks and months, and predicted readiness scores for upcoming assessments.
+
 ## System Design
 
 ### Architecture
 
-![Architecture Diagram](docs/images/architecture diagram.svg)
+![Architecture Diagram](docs/images/architecture.svg)
 
 NoteFlow follows a three-tier architecture:
 - **Frontend:** Next.js App Router with React Server Components and Tailwind CSS, deployed on Vercel
