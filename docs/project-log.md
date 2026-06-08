@@ -82,9 +82,9 @@ Each row records work done on the project. Log every hour, including self-learni
 ### Enosh Er
 
 | Date       | Task                                                                                                      | Hours |
-|------------|-----------------------------------------------------------------------------------------------------------|-------|
-|            |                                                                                                           |       |
-| **Total**  |                                                                                                           | **0.0** |
+| 2026-06-08 | Ran M2 schema migration in Supabase SQL editor (`m2_schema.sql`): all 7 tables, RLS policies, triggers, cascade deletes; debugged idempotency issues (drop-if-exists for triggers and policies); verified auth trigger auto-creates profile rows on signup using test account | 2.5 |
+| 2026-06-08 | Generated TypeScript types from Supabase using `supabase gen types`; created `lib/types/database.ts` with all 7 tables; wired `Database` type into `createBrowserClient` and `createServerClient`; debugged working directory and keychain issues; committed and pushed on `chore/db-types` branch; opened PR | 1.5 |
+| **Total**  |                                                                                                           | **4.0** |
 
 ---
 
@@ -130,10 +130,10 @@ Each row records work done on the project. Log every hour, including self-learni
 |------------------|-----------------|-----------------|---------------|----------|
 | Liftoff          | 18 May 2pm SGT  | 10.5            | 11.5          | 22.0     |
 | Milestone 1      | 1 Jun 2pm SGT   | 17.0            | 30.0          | 47.0     |
-| Milestone 2      | 29 Jun 2pm SGT  | 0.0             | 0.0           | 0.0      |
+| Milestone 2      | 29 Jun 2pm SGT  | 0.0             | 4.0           | 0.0      |
 | Milestone 3      | 27 Jul 2pm SGT  | 0.0             | 0.0           | 0.0      |
 | Splashdown       | 26 Aug          | 0.0             | 0.0           | 0.0      |
-| **Running Total**|                 | **27.5**        | **41.5**      | **69.0** |
+| **Running Total**|                 | **27.5**        | **45.5**      | **73.0** |
 | **Target**       | By Splashdown   | **140**         | **140**       | **280**  |
 
 ---
