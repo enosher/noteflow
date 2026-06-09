@@ -70,7 +70,7 @@ export default async function ModulesPage() {
               >
                 <div>
                   <span className="font-semibold text-sm">{m.code}</span>
-                  <span className="text-gray-500 text-sm ml-2">{m.name}</span>
+                  <span className="text-gray-400 text-sm ml-4">&#8250;</span>
                   {m.description && (
                     <p className="text-gray-400 text-xs mt-1">{m.description}</p>
                   )}
