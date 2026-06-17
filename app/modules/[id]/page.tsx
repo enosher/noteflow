@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { DeleteButton } from "@/components/DeleteButton"; // <-- Added import
-import { deleteModule } from "./edit/actions"; // <-- Added import
+import { DeleteButton } from "@/components/DeleteButton"; 
+import { deleteModule } from "./edit/actions"; 
+import { deleteTopic } from "./topics/[topicId]/edit/actions";
 
 export default async function ModuleDetailPage({
   params,
@@ -36,7 +37,6 @@ export default async function ModuleDetailPage({
         </Link>
       </div>
 
-      {/* --- START OF DAY 2 UI CHANGES --- */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">{mod.code}</h1>
@@ -55,7 +55,6 @@ export default async function ModuleDetailPage({
           />
         </div>
       </div>
-      {/* --- END OF DAY 2 UI CHANGES --- */}
 
       {mod.description && (
         <p className="text-gray-700 mt-2">{mod.description}</p>
@@ -78,13 +77,20 @@ export default async function ModuleDetailPage({
       ) : (
         <ul className="space-y-2">
           {topics.map((t) => (
-            <li key={t.id} className="rounded-md border p-4 hover:bg-gray-50">
-              <Link href={`/modules/${id}/topics/${t.id}`}>
+            <li key={t.id} className="rounded-md border p-4 hover:bg-gray-50 flex items-center justify-between">
+              <Link href={`/modules/${id}/topics/${t.id}`} className="flex-1">
                 <div className="font-medium">{t.name}</div>
-                {t.description && (
-                  <div className="text-sm text-gray-600">{t.description}</div>
-                )}
+                {t.description && <div className="text-sm text-gray-600">{t.description}</div>}
               </Link>
+              <div className="flex gap-2 ml-4">
+                <Link href={`/modules/${id}/topics/${t.id}/edit`} className="text-sm text-blue-600 hover:underline self-center">
+                  Edit
+                </Link>
+                <DeleteButton
+                  action={deleteTopic.bind(null, t.id)}
+                  confirmMessage="Delete this topic and everything in it?"
+                />
+              </div>
             </li>
           ))}
         </ul>
