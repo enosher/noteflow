@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { DeleteButton } from "@/components/DeleteButton"; // <-- Added import
+import { deleteModule } from "./edit/actions"; // <-- Added import
 
 export default async function ModuleDetailPage({
   params,
@@ -34,8 +36,27 @@ export default async function ModuleDetailPage({
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold">{mod.code}</h1>
-      <p className="text-gray-600">{mod.name}</p>
+      {/* --- START OF DAY 2 UI CHANGES --- */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">{mod.code}</h1>
+          <p className="text-gray-600">{mod.name}</p>
+        </div>
+        <div className="flex gap-2">
+          <Link
+            href={`/modules/${id}/edit`}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Edit
+          </Link>
+          <DeleteButton
+            action={deleteModule.bind(null, id)}
+            confirmMessage="Delete this module and everything in it? This can't be undone."
+          />
+        </div>
+      </div>
+      {/* --- END OF DAY 2 UI CHANGES --- */}
+
       {mod.description && (
         <p className="text-gray-700 mt-2">{mod.description}</p>
       )}
