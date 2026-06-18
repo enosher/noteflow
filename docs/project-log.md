@@ -82,9 +82,28 @@ Each row records work done on the project. Log every hour, including self-learni
 ### Enosh Er
 
 | Date       | Task                                                                                                      | Hours |
-| 2026-06-08 | Ran M2 schema migration in Supabase SQL editor (`m2_schema.sql`): all 7 tables, RLS policies, triggers, cascade deletes; debugged idempotency issues (drop-if-exists for triggers and policies); verified auth trigger auto-creates profile rows on signup using test account | 2.5 |
-| 2026-06-08 | Generated TypeScript types from Supabase using `supabase gen types`; created `lib/types/database.ts` with all 7 tables; wired `Database` type into `createBrowserClient` and `createServerClient`; debugged working directory and keychain issues; committed and pushed on `chore/db-types` branch; opened PR | 1.5 |
-| **Total**  |                                                                                                           | **4.0** |
+|------------|-----------------------------------------------------------------------------------------------------------|-------|
+| 2026-06-08 | Reviewed and graded peer teams' Milestone 1 proof of concepts against the rubrics; reviewed TA and peer feedback received on NoteFlow; ideated implementation changes in response | 2.0 |
+| 2026-06-08 | Ran M2 schema migration in Supabase SQL editor; created all 7 tables, RLS policies, triggers, cascade deletes; debugged idempotency issues; verified auth trigger creates profile rows on signup | 2.5 |
+| 2026-06-08 | Generated TypeScript types from Supabase; wired `Database` type into Supabase clients; debugged working directory and keychain issues; committed and opened PR on `chore/db-types` | 1.5 |
+| 2026-06-09 | Built modules list page (Pattern A reference page); RLS-scoped fetch, empty state, error handling | 3 |
+| 2026-06-09 | Built create module form (Pattern B); server action with validation, Supabase insert, redirect; debugged a stray folder and a dropped git push | 3 |
+| 2026-06-09 | Debugged seed data script — null user_id error traced to a missing profiles row from signing up before the handle_new_user trigger existed; fixed with manual insert; saved cleaned script to `docs/seed-data.sql` | 1.5 |
+| 2026-06-09 | Worked out a file ownership matrix to prevent merge conflicts | 0.5 |
+| 2026-06-15 | Module edit + delete server actions; | 2.5 |
+| 2026-06-15 | Topic create/edit/delete server actions following the `.bind` nested-resource pattern | 2 |
+| 2026-06-15 | Debugged stray untracked `supabase/.temp` cache folder; added to `.gitignore` | 0.5 |
+| 2026-06-15 | Added M2 schema migration to the repo for the first time; | 0.5 |
+| 2026-06-15 | Debugged branch/commit mix-up from working on the wrong branch; fixed a filename typo; re-pushed affected PRs | 0.5 |
+| 2026-06-16 | Built Supabase Storage setup — private `note-files` bucket, RLS policies, `lib/storage.ts` helper; smoke-tested upload via Supabase dashboard | 3 |
+| 2026-06-16 | Subtopic create/edit/delete server actions following Pattern C; commit `847bed9` on `feat/subtopics-actions` | 3 |
+| 2026-06-16 | Debugged a branch/commit mix-up — storage work had landed on the subtopics branch with stray files; cleaned up and force-pushed a clean commit | 1 |
+| 2026-06-17 | Merged main into `feat/storage-setup` and `feat/subtopics-actions`; reran lint and build; | 2.5 |
+| 2026-06-17 | Wrote `createQuestion` server action — MCQ option parsing, answer-matching validation, difficulty check; on `feat/questions-actions` | 3.5 |
+| 2026-06-18 | Built shared nav bar (NavBar, NavLinks, FlowMark, nav-items) so /modules is reachable from the dashboard; wired into app/layout.tsx; fixed LogoutButton import (was a default export, not named); removed duplicate LogoutButton from dashboard page; installed Homebrew and GitHub CLI for PR workflow | 3 |
+| 2026-06-18 | Wrote getNoteLocation helper (lib/notes.ts) and notes create/edit/delete actions with file upload (lib/storage.ts integration); on feat/notes-actions branch | 2 |
+| 2026-06-18 | Quiz answer submission + attempt recording — submitAnswer server action (MCQ/short-answer case-insensitive match, long_answer always marked correct) | 2 |
+| **Total**  |                                                                                                           | **40.0** |
 
 ---
 
@@ -130,10 +149,10 @@ Each row records work done on the project. Log every hour, including self-learni
 |------------------|-----------------|-----------------|---------------|----------|
 | Liftoff          | 18 May 2pm SGT  | 10.5            | 11.5          | 22.0     |
 | Milestone 1      | 1 Jun 2pm SGT   | 17.0            | 30.0          | 47.0     |
-| Milestone 2      | 29 Jun 2pm SGT  | 0.0             | 4.0           | 0.0      |
+| Milestone 2      | 29 Jun 2pm SGT  | 0.0             | 40.0          | 40.0     |
 | Milestone 3      | 27 Jul 2pm SGT  | 0.0             | 0.0           | 0.0      |
 | Splashdown       | 26 Aug          | 0.0             | 0.0           | 0.0      |
-| **Running Total**|                 | **27.5**        | **45.5**      | **73.0** |
+| **Running Total**|                 | **27.5**        | **79.5**      | **109.0**|
 | **Target**       | By Splashdown   | **140**         | **140**       | **280**  |
 
 ---
