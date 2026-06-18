@@ -101,7 +101,7 @@ Each row records work done on the project. Log every hour, including self-learni
 | 2026-06-17 | Merged main into `feat/storage-setup` and `feat/subtopics-actions`; reran lint and build; | 2.5 |
 | 2026-06-17 | Wrote `createQuestion` server action — MCQ option parsing, answer-matching validation, difficulty check; on `feat/questions-actions` | 3.5 |
 | 2026-06-18 | Built shared nav bar (NavBar, NavLinks, FlowMark, nav-items) so /modules is reachable from the dashboard; wired into app/layout.tsx; fixed LogoutButton import (was a default export, not named); removed duplicate LogoutButton from dashboard page; installed Homebrew and GitHub CLI for PR workflow | 3 |
-| 2026-06-18 | Wrote getNoteLocation helper (lib/notes.ts) and notes create/edit/delete actions with file upload (lib/storage.ts integration); on feat/notes-actions branch | 2 |
+| 2026-06-18 | Wrote getNoteLocation helper (lib/notes.ts) and notes create/edit/delete actions with file upload (lib/storage.ts integration) | 2 |
 | 2026-06-18 | Quiz answer submission + attempt recording — submitAnswer server action (MCQ/short-answer case-insensitive match, long_answer always marked correct) | 2 |
 | **Total**  |                                                                                                           | **40.0** |
 
