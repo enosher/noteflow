@@ -52,8 +52,7 @@ export async function updateQuestion(questionId: string, formData: FormData) {
     .single();
 
   if (q && q.topics) {
-    // @ts-ignore
-    const moduleId = q.topics.module_id;
+    const moduleId = (q.topics as unknown as { module_id: string }).module_id;
     revalidatePath(`/modules/${moduleId}/topics/${q.topic_id}`);
     redirect(`/modules/${moduleId}/topics/${q.topic_id}`);
   }
@@ -67,7 +66,7 @@ export async function deleteQuestion(questionId: string) {
   const { error } = await supabase.from("questions").delete().eq("id", questionId);
 
   if (q && q.topics && !error) {
-    // @ts-ignore
-    revalidatePath(`/modules/${q.topics.module_id}/topics/${q.topic_id}`);
+    const moduleId = (q.topics as unknown as { module_id: string }).module_id;
+    revalidatePath(`/modules/${moduleId}/topics/${q.topic_id}`);
   }
 }
