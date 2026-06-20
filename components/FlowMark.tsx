@@ -1,3 +1,7 @@
+// One location for the icon so it's reused everywhere the wordmark shows up (nav now, login/signup and other places later on).
+// NoteFlow icon is SVG file type
+// Rendered at a fixed size in the nav bar.
+
 const VIEW_BOX = "-37.19 -52.28 587.20 726.49";
  
 export function FlowMark({ size = 28 }: { size?: number }) {
