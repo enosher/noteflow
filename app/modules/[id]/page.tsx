@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DeleteButton } from "@/components/DeleteButton"; 
 import { deleteModule } from "./edit/actions"; 
 import { deleteTopic } from "./topics/[topicId]/edit/actions";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function ModuleDetailPage({
   params,
@@ -31,11 +32,9 @@ export default async function ModuleDetailPage({
 
   return (
     <main className="p-6 max-w-3xl mx-auto">
-      <div className="mb-6">
-        <Link href="/modules" className="text-sm text-blue-600 hover:underline">
-          ← All modules
-        </Link>
-      </div>
+      
+      {/* Replaced the manual Link with the new Breadcrumbs component */}
+      <Breadcrumbs moduleId={id} />
 
       <div className="flex items-start justify-between">
         <div>
