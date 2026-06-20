@@ -20,13 +20,12 @@ export function Zoom() {
       </button>
 
       {open && (
-        // Backdrop click tp close it
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6"
           onClick={() => setOpen(false)}
         >
           <div
-            className="rounded-2xl bg-white p-10 shadow-xl"
+            className="rounded-2xl bg-[#1C1B1A] p-10 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <FlowMark size={220} />
