@@ -5,6 +5,7 @@ import {
   mistakeRecencyScore,
   difficultyMatchScore,
   scoreQuestion,
+  getScoreBreakdown,
 } from "./recommender";
 
 describe("topicWeaknessScore", () => {
@@ -75,5 +76,36 @@ describe("scoreQuestion", () => {
       userAvgDifficulty: 3,
     });
     expect(score).toBeLessThan(0.2);
+  });
+});
+
+describe("getScoreBreakdown", () => {
+  const input = {
+    topicAccuracy: 0.3,
+    lastAttemptedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    lastAttemptCorrect: false,
+    questionDifficulty: 4,
+    userAvgDifficulty: 2,
+  };
+
+  it("total always matches scoreQuestion for the same input -- the debug view can never show a number that disagrees with the real score", () => {
+    expect(getScoreBreakdown(input).total).toBeCloseTo(scoreQuestion(input), 10);
+  });
+
+  it("returns exactly the four scoring terms", () => {
+    const { terms } = getScoreBreakdown(input);
+    expect(terms.map((t) => t.label)).toEqual([
+      "Topic weakness",
+      "Recency boost",
+      "Mistake recency",
+      "Difficulty match",
+    ]);
+  });
+
+  it("each term's weighted value is rawScore times weight", () => {
+    const { terms } = getScoreBreakdown(input);
+    for (const term of terms) {
+      expect(term.weighted).toBeCloseTo(term.rawScore * term.weight, 10);
+    }
   });
 });

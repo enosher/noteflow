@@ -58,12 +58,75 @@ export function scoreQuestion(input: {
   );
 }
 
+export type ScoreTerm = {
+  label: string;
+  rawScore: number; // 0-1, before the weight is applied
+  weight: number;
+  weighted: number; // rawScore * weight -- this is what actually adds to the total
+};
+
+export type ScoreBreakdown = {
+  terms: ScoreTerm[];
+  total: number;
+};
+
+// Same four scoring functions as scoreQuestion, just kept itemised instead
+// of summed -- this is what the debug UI renders so a recommendation is
+// never a black box. total is computed by summing the terms (not by
+// calling scoreQuestion again) so the two can never silently drift apart;
+// a unit test below pins them to always match.
+export function getScoreBreakdown(input: {
+  topicAccuracy: number | undefined;
+  lastAttemptedAt: string | null;
+  lastAttemptCorrect: boolean | null;
+  questionDifficulty: number;
+  userAvgDifficulty: number;
+}): ScoreBreakdown {
+  const raw = {
+    topicWeakness: topicWeaknessScore(input.topicAccuracy),
+    recencyBoost: recencyBoostScore(input.lastAttemptedAt),
+    mistakeRecency: mistakeRecencyScore(input.lastAttemptCorrect),
+    difficultyMatch: difficultyMatchScore(input.questionDifficulty, input.userAvgDifficulty),
+  };
+
+  const terms: ScoreTerm[] = [
+    {
+      label: "Topic weakness",
+      rawScore: raw.topicWeakness,
+      weight: WEIGHTS.topicWeakness,
+      weighted: WEIGHTS.topicWeakness * raw.topicWeakness,
+    },
+    {
+      label: "Recency boost",
+      rawScore: raw.recencyBoost,
+      weight: WEIGHTS.recencyBoost,
+      weighted: WEIGHTS.recencyBoost * raw.recencyBoost,
+    },
+    {
+      label: "Mistake recency",
+      rawScore: raw.mistakeRecency,
+      weight: WEIGHTS.mistakeRecency,
+      weighted: WEIGHTS.mistakeRecency * raw.mistakeRecency,
+    },
+    {
+      label: "Difficulty match",
+      rawScore: raw.difficultyMatch,
+      weight: WEIGHTS.difficultyMatch,
+      weighted: WEIGHTS.difficultyMatch * raw.difficultyMatch,
+    },
+  ];
+
+  const total = terms.reduce((sum, t) => sum + t.weighted, 0);
+  return { terms, total };
+}
+
 export type Recommendation = {
   question_id: string;
   prompt: string;
   topic_id: string;
   topic_name: string;
   module_id: string;
+  breakdown: ScoreBreakdown;
 };
 
 export async function getRecommendedQuestion(
@@ -95,18 +158,23 @@ export async function getRecommendedQuestion(
 
   const userAvgDifficulty = questions.reduce((sum, q) => sum + q.difficulty, 0) / questions.length;
 
-  let best: { question: (typeof questions)[number]; score: number } | null = null;
+  let best: {
+    question: (typeof questions)[number];
+    score: number;
+    input: Parameters<typeof getScoreBreakdown>[0];
+  } | null = null;
 
   for (const q of questions) {
     const last = lastAttemptByQuestion.get(q.id);
-    const score = scoreQuestion({
+    const input = {
       topicAccuracy: accuracyByTopic.get(q.topic_id),
       lastAttemptedAt: last?.at ?? null,
       lastAttemptCorrect: last ? last.correct : null,
       questionDifficulty: q.difficulty,
       userAvgDifficulty,
-    });
-    if (!best || score > best.score) best = { question: q, score };
+    };
+    const score = scoreQuestion(input);
+    if (!best || score > best.score) best = { question: q, score, input };
   }
 
   if (!best) return null;
@@ -122,5 +190,6 @@ export async function getRecommendedQuestion(
     topic_id: best.question.topic_id,
     topic_name: topic?.name ?? "",
     module_id: topic?.module_id ?? "",
+    breakdown: getScoreBreakdown(best.input),
   };
 }
