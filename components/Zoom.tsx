@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FlowMark } from "./FlowMark";
 
-// Clicking on the icon gives zoomed in version. 
+// Clicking on the icon gives zoomed in version.
 // For users to admire the logo closely :)
 export function Zoom() {
   const [open, setOpen] = useState(false);
@@ -20,6 +20,7 @@ export function Zoom() {
       </button>
 
       {open && (
+        // Backdrop click to close it
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6"
           onClick={() => setOpen(false)}
