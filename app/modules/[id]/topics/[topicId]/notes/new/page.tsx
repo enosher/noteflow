@@ -1,4 +1,5 @@
 import { createNote } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function NewNotePage({
   params,
@@ -27,9 +28,7 @@ export default async function NewNotePage({
           <span className="text-sm font-medium">Attach a file (optional)</span>
           <input type="file" name="file" className="mt-1 block text-sm" />
         </label>
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-          Save note
-        </button>
+        <SubmitButton pendingText="Saving...">Save note</SubmitButton>
       </form>
     </main>
   );
