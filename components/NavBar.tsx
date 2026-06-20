@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
-import { FlowMark } from "./FlowMark";
+import { Zoom } from "./Zoom";
 import LogoutButton from "@/app/dashboard/logout-button";
 
 export async function NavBar() {
@@ -13,12 +13,18 @@ export async function NavBar() {
   return (
     <nav className="flex items-center justify-between border-b border-[#E7E4DF] bg-[#FAFAF9] px-6 py-3">
       <div className="flex items-center gap-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <FlowMark />
-          <span className="text-[15px] font-semibold tracking-tight text-[#1C1B1A]">
+        {/* Icon and wordmark live side by side but aren't nested inside
+            each other - Zoom is its own button, "NoteFlow" is its own
+            link. Buttons inside links get weird across browsers. */}
+        <div className="flex items-center gap-2">
+          <Zoom />
+          <Link
+            href="/dashboard"
+            className="text-[15px] font-semibold tracking-tight text-[#1C1B1A]"
+          >
             NoteFlow
-          </span>
-        </Link>
+          </Link>
+        </div>
         <NavLinks />
       </div>
       <LogoutButton />
