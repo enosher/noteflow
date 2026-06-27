@@ -76,7 +76,11 @@ Each row records work done on the project. Log every hour, including self-learni
 
 | Date       | Task                                                                                                      | Hours |
 |------------|-----------------------------------------------------------------------------------------------------------|-------|
-|            |                                                                                                           |       |
+| 2026-06-17 | Built read-only module detail page with topics list (PR #17) |  |
+| 2026-06-17 | Built module edit/delete UI (PR #18) |  |
+| 2026-06-17 | Built topics UI (PR #19) |  |
+| 2026-06-21 | Built notes CRUD UI with markdown rendering and file upload (PR #34) |  |
+| 2026-06-21 | Completed Day 6 questions CRUD — question creation and list UI (PR #35) |  |
 | **Total**  |                                                                                                           | **0.0** |
 
 ### Enosh Er
@@ -86,6 +90,8 @@ Each row records work done on the project. Log every hour, including self-learni
 | 2026-06-08 | Reviewed and graded peer teams' Milestone 1 proof of concepts against the rubrics; reviewed TA and peer feedback received on NoteFlow; ideated implementation changes in response | 2.0 |
 | 2026-06-08 | Ran M2 schema migration in Supabase SQL editor; created all 7 tables, RLS policies, triggers, cascade deletes; debugged idempotency issues; verified auth trigger creates profile rows on signup | 2.5 |
 | 2026-06-08 | Generated TypeScript types from Supabase; wired `Database` type into Supabase clients; debugged working directory and keychain issues; committed and opened PR on `chore/db-types` | 1.5 |
+| 2026-06-08 | Review and synthesised peer-review and TA feedback | 1.5 |
+| 2026-06-08 | Ideated week-by-week task breakdown, mandatory vs optional deliverables, role split | 1.5 |
 | 2026-06-09 | Built modules list page (Pattern A reference page); RLS-scoped fetch, empty state, error handling | 3 |
 | 2026-06-09 | Built create module form (Pattern B); server action with validation, Supabase insert, redirect; debugged a stray folder and a dropped git push | 3 |
 | 2026-06-09 | Debugged seed data script — null user_id error traced to a missing profiles row from signing up before the handle_new_user trigger existed; fixed with manual insert; saved cleaned script to `docs/seed-data.sql` | 1.5 |
@@ -100,10 +106,23 @@ Each row records work done on the project. Log every hour, including self-learni
 | 2026-06-16 | Debugged a branch/commit mix-up — storage work had landed on the subtopics branch with stray files; cleaned up and force-pushed a clean commit | 1 |
 | 2026-06-17 | Merged main into `feat/storage-setup` and `feat/subtopics-actions`; reran lint and build; | 2.5 |
 | 2026-06-17 | Wrote `createQuestion` server action — MCQ option parsing, answer-matching validation, difficulty check; on `feat/questions-actions` | 3.5 |
+| 2026-06-17 | Reviewed Spencer's PRs #17-#19, found and removed an unused, deprecated `@supabase/auth-helpers-nextjs` dependency from PR #18, which reappeared on PR #19 after a rebase (squash-merge patch-id mismatch) and had to be removed again; resolved a merge conflict on `app/modules/[id]/page.tsx`; confirmed PR #20 (topic detail) had zero new commits — branch pointed to the same commit as `feat/topics-ui` — and closed it | 1.5 |
 | 2026-06-18 | Built shared nav bar (NavBar, NavLinks, FlowMark, nav-items) so /modules is reachable from the dashboard; wired into app/layout.tsx; fixed LogoutButton import (was a default export, not named); removed duplicate LogoutButton from dashboard page; installed Homebrew and GitHub CLI for PR workflow | 3 |
+| 2026-06-18 | Designed NoteFlow logo/icon — explored five initial concept directions (stacked notes, sprout, open rings, winding path, soft loop) in SVG; narrowed to two, then converged on a "Flowing Note" concept (page with folded corner, header lines, wave as horizon line, rising graph line with data dots, loop arrow); colour change from teal to cream | 4 |
 | 2026-06-18 | Wrote getNoteLocation helper (lib/notes.ts) and notes create/edit/delete actions with file upload (lib/storage.ts integration) | 2 |
 | 2026-06-18 | Quiz answer submission + attempt recording — submitAnswer server action (MCQ/short-answer case-insensitive match, long_answer always marked correct) | 2 |
-| **Total**  |                                                                                                           | **40.0** |
+| 2026-06-18 | Created `docs/decisions-log.md` to record major decisions across Liftoff, M1 and M2 (stack switch, Apollo 11 scope, schema choices, storage conventions, scaffold patterns, quiz grading, weak-topic thresholds, recommender weights) | 3 |
+| 2026-06-19 | Built markdown paste import page (`app/modules/[id]/topics/[topicId]/notes/import/page.tsx`), reusing `createNote.bind(null, topicId, null)` | 2 |
+| 2026-06-19 | Implemented finalised NoteFlow logo into the nav bar | 1 |
+| 2026-06-19 | Updated `docs/decisions-log.md` with schema, scaffold pattern, quiz grading, weak-topic threshold, and recommender weight decisions | 1.5 |
+| 2026-06-20 | Built `lib/weak-topics.ts` — `getTopicAccuracy`, `isWeakTopic`, with modifiable `WEAK_TOPIC_THRESHOLD` / `WEAK_TOPIC_MIN_ATTEMPTS` | 3 |
+| 2026-06-20 | Built `lib/recommender.ts` — weighted-sum `getRecommendedQuestion` scoring algorithm using info from `lib/weak-topics`  | 1 |
+| 2026-06-20 | Added zoom feature for users to admire the logo; fixed logo dimensions, logo flap colour, and the Zoom background contrast across three follow-up commits | 2 |
+| 2026-06-21 | Wrote Vite test unit tests for `lib/weak-topics.ts` and `lib/recommender.ts` (16 tests incl edge cases); fixed a Supabase nested-relation cast in `lib/recommender.ts` to match the established subtopics pattern | 2.5 |
+| 2026-06-21 | Built quiz-taking UI (start screen, questions, results) | 2 |
+| 2026-06-21 | Fixed a missing pending state on the note save button - prevents a silent hang and double-submit | 1 |
+| 2026-06-21 | Built the score-breakdown view to explain the recommendations — shows the weighted sub-scores (topic weakness, recency boost, mistake recency, difficulty match) behind each recommended question | 2.5 |
+| **Total**  |                                                                                                           | **70** |
 
 ---
 
@@ -149,10 +168,10 @@ Each row records work done on the project. Log every hour, including self-learni
 |------------------|-----------------|-----------------|---------------|----------|
 | Liftoff          | 18 May 2pm SGT  | 10.5            | 11.5          | 22.0     |
 | Milestone 1      | 1 Jun 2pm SGT   | 17.0            | 30.0          | 47.0     |
-| Milestone 2      | 29 Jun 2pm SGT  | 0.0             | 40.0          | 40.0     |
+| Milestone 2      | 29 Jun 2pm SGT  | 0.0             | 70.0          | 70.0     |
 | Milestone 3      | 27 Jul 2pm SGT  | 0.0             | 0.0           | 0.0      |
 | Splashdown       | 26 Aug          | 0.0             | 0.0           | 0.0      |
-| **Running Total**|                 | **27.5**        | **79.5**      | **109.0**|
+| **Running Total**|                 | **27.5**        | **111.5**     | **139.0**|
 | **Target**       | By Splashdown   | **140**         | **140**       | **280**  |
 
 ---
