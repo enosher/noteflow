@@ -77,10 +77,13 @@ export default async function ModuleDetailPage({
         <ul className="space-y-2">
           {topics.map((t) => (
             <li key={t.id} className="rounded-md border p-4 hover:bg-gray-50 flex items-center justify-between">
-              <Link href={`/modules/${id}/topics/${t.id}`} className="flex-1">
-                <div className="font-medium">{t.name}</div>
-                {t.description && <div className="text-sm text-gray-600">{t.description}</div>}
-              </Link>
+              <Link href={`/modules/${id}/topics/${t.id}`} className="flex-1 flex items-center gap-3 group">
+                <div>
+                  <div className="font-medium group-hover:text-blue-600 group-hover:underline">{t.name}</div>
+                  {t.description && <div className="text-sm text-gray-600">{t.description}</div>}
+                </div>
+                <span className="text-gray-300 group-hover:text-blue-400 text-lg">›</span>
+               </Link>
               <div className="flex gap-2 ml-4">
                 <Link href={`/modules/${id}/topics/${t.id}/edit`} className="text-sm text-blue-600 hover:underline self-center">
                   Edit
