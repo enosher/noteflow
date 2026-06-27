@@ -51,11 +51,11 @@ export default async function TopicDetailPage({
           <ul className="space-y-2">
             {subtopics.map((s) => (
               <li key={s.id} className="rounded-md border p-3 text-sm flex items-center justify-between hover:bg-gray-50">
-                <span>{s.name}</span>
+                <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="flex-1 flex items-center gap-3 group">
+                  <span className="group-hover:text-blue-600 group-hover:underline">{s.name}</span>
+                  <span className="text-gray-300 group-hover:text-blue-400">›</span>
+                </Link>
                 <div className="flex gap-2 ml-4">
-                  <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="text-sm text-blue-600 hover:underline self-center">
-                    Edit
-                  </Link>
                   <DeleteButton
                     action={deleteSubtopic.bind(null, s.id)}
                     confirmMessage="Delete this subtopic?"
@@ -83,9 +83,10 @@ export default async function TopicDetailPage({
         ) : (
           <ul className="space-y-2">
             {notes.map((n) => (
-              <li key={n.id} className="rounded-md border p-3 text-sm">
-                <Link href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`} className="hover:underline">
-                  {n.title}
+              <li key={n.id} className="rounded-md border p-3 text-sm hover:bg-gray-50">
+                <Link href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`} className="flex items-center gap-3 group">
+                  <span className="flex-1 group-hover:text-blue-600 group-hover:underline">{n.title}</span>
+                  <span className="text-gray-300 group-hover:text-blue-400">›</span>
                 </Link>
               </li>
             ))}
@@ -110,9 +111,12 @@ export default async function TopicDetailPage({
           <>
             <ul className="space-y-2 mb-3">
               {questions.map((q) => (
-                <li key={q.id} className="rounded-md border p-3 text-sm flex justify-between">
-                  <span>{q.prompt}</span>
-                  <span className="text-gray-500">Difficulty {q.difficulty}</span>
+                <li key={q.id} className="rounded-md border p-3 text-sm flex items-center justify-between hover:bg-gray-50">
+                  <Link href={`/modules/${moduleId}/topics/${topicId}/questions/${q.id}/edit`} className="flex-1 flex items-center gap-3 group">
+                    <span className="flex-1 group-hover:text-blue-600 group-hover:underline">{q.prompt}</span>
+                    <span className="text-gray-300 group-hover:text-blue-400">›</span>
+                  </Link>
+                  <span className="text-gray-500 ml-4 shrink-0">Difficulty {q.difficulty}</span>
                 </li>
               ))}
             </ul>
