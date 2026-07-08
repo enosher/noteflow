@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { uploadNoteFile } from "@/lib/storage";
 import { getNoteLocation } from "@/lib/notes";
+import { friendlyMessage } from "@/lib/errors";
 
 export async function updateNote(noteId: string, formData: FormData) {
   const supabase = await createClient();
@@ -35,7 +36,7 @@ export async function updateNote(noteId: string, formData: FormData) {
   }
 
   const { error } = await supabase.from("notes").update(update).eq("id", noteId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   const { topicId, moduleId } = await getNoteLocation(supabase, existing.topic_id, existing.subtopic_id);
 
@@ -52,7 +53,7 @@ export async function deleteNote(noteId: string) {
   if (!existing) redirect("/modules");
 
   const { error } = await supabase.from("notes").delete().eq("id", noteId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   const { topicId, moduleId } = await getNoteLocation(supabase, existing.topic_id, existing.subtopic_id);
 

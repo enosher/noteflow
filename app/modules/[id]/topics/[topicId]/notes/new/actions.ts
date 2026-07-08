@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { uploadNoteFile } from "@/lib/storage";
+import { friendlyMessage } from "@/lib/errors";
 
 export async function createNote(
   topicId: string,
@@ -37,7 +38,7 @@ export async function createNote(
     file_url: fileUrl,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   const { data: topic } = await supabase.from("topics").select("module_id").eq("id", topicId).single();
 

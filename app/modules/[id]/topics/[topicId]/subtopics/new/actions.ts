@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { friendlyMessage } from "@/lib/errors";
 
 export async function createSubtopic(topicId: string, formData: FormData) {
   const supabase = await createClient();
@@ -33,7 +34,7 @@ export async function createSubtopic(topicId: string, formData: FormData) {
     order_index: 0,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   // No explicit "does this topic belong to this user" check before the
   // insert: subtopics_insert_own's RLS policy (m2_schema.sql) already joins

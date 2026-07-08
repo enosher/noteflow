@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { friendlyMessage } from "@/lib/errors";
 
 export async function updateSubtopic(subtopicId: string, formData: FormData) {
   const supabase = await createClient();
@@ -21,7 +22,7 @@ export async function updateSubtopic(subtopicId: string, formData: FormData) {
   if (fetchError || !subtopic) throw new Error("Subtopic not found.");
 
   const { error } = await supabase.from("subtopics").update({ name }).eq("id", subtopicId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   // Why the cast: a subtopic has exactly one parent topic, but Supabase's generated
   // types treat every embedded relation as potentially an array or null,
@@ -47,7 +48,7 @@ export async function deleteSubtopic(subtopicId: string) {
     .single();
 
   const { error } = await supabase.from("subtopics").delete().eq("id", subtopicId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   // Cascade note: deleting a subtopic cascades to any notes/questions
   // attached to it (on delete cascade, m2_schema.sql).

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { friendlyMessage } from "@/lib/errors";
 
 export async function updateModule(moduleId: string, formData: FormData) {
   const supabase = await createClient();
@@ -18,7 +19,7 @@ export async function updateModule(moduleId: string, formData: FormData) {
     .update({ code, name, description })
     .eq("id", moduleId);
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   revalidatePath("/modules");
   revalidatePath(`/modules/${moduleId}`);
@@ -29,7 +30,7 @@ export async function deleteModule(moduleId: string) {
   const supabase = await createClient();
 
   const { error } = await supabase.from("modules").delete().eq("id", moduleId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   revalidatePath("/modules");
   redirect("/modules");
