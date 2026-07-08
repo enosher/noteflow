@@ -1,6 +1,7 @@
 // app/modules/page.tsx not to be confused with app/page.tsx! This is the page that shows the list of modules, at the /modules route.
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { loadSampleData } from "./sample-data-actions";
 
 /**
  * ModulesPage — lists all modules belonging to the signed-in user.
@@ -58,6 +59,17 @@ export default async function ModulesPage() {
           >
             Create module
           </Link>
+          {/* Escape hatch from a blank first run: pulls in two ready-made
+              modules with weeks of quiz history so Track/Adapt are visible
+              without the user having to generate that history by hand. */}
+          <form action={loadSampleData} className="mt-3">
+            <button
+              type="submit"
+              className="text-sm text-blue-600 underline underline-offset-2 hover:text-blue-700"
+            >
+              Or load sample data to explore first
+            </button>
+          </form>
         </div>
       ) : (
         // Module list — each row links to the module detail page
