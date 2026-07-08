@@ -3,6 +3,7 @@ import Link from "next/link";
 import { NavLinks } from "./NavLinks";
 import { Zoom } from "./Zoom";
 import LogoutButton from "@/app/dashboard/logout-button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export async function NavBar() {
   const supabase = await createClient();
@@ -27,7 +28,10 @@ export async function NavBar() {
         </div>
         <NavLinks />
       </div>
-      <LogoutButton />
+      <div className="flex items-center gap-3">
+        <ThemeToggle />
+        <LogoutButton />
+      </div>
     </nav>
   );
 }

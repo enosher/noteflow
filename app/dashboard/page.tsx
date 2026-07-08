@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getTopicAccuracy, getRecommendedQuestion } from "@/lib/recommender";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { MasteryDot } from "@/components/mastery-dot";
+
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -75,8 +77,13 @@ export default async function DashboardPage() {
             <tbody>
               {topicStats.map((t) => (
                 <tr key={t.topic_id} className="border-b border-gray-100">
-                  <td className="py-2">{t.topic_name}</td>
-                  <td className="py-2">{Math.round(t.accuracy * 100)}%</td>
+                  <td className="py-2">
+                    <span className="inline-flex items-center gap-2">
+                      <MasteryDot accuracy={t.accuracy} attempts={t.attempts} />
+                      {t.topic_name}
+                    </span>
+                  </td>
+                  <td className="py-2 tabular-nums">{Math.round(t.accuracy * 100)}%</td>
                   <td className="py-2">{t.attempts}</td>
                 </tr>
               ))}
