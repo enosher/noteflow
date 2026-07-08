@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateNote } from "../actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function EditNotePage({
   params,
@@ -33,9 +34,9 @@ export default async function EditNotePage({
           </span>
           <input type="file" name="file" className="mt-1 block text-sm" />
         </label>
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Saving…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
           Save changes
-        </button>
+        </SubmitButton>
       </form>
     </main>
   );

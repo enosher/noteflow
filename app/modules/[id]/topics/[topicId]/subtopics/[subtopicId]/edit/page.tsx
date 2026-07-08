@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateSubtopic } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function EditSubtopicPage({
   params,
@@ -28,9 +29,9 @@ export default async function EditSubtopicPage({
           <span className="text-sm font-medium">Name</span>
           <input name="name" required defaultValue={subtopic.name} className="mt-1 w-full rounded-md border px-3 py-2" />
         </label>
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Saving…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
           Save changes
-        </button>
+        </SubmitButton>
       </form>
     </main>
   );

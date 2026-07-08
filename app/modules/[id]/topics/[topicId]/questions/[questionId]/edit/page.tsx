@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateQuestion } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function EditQuestionPage({
   params,
@@ -70,9 +71,9 @@ export default async function EditQuestionPage({
           <input type="number" name="difficulty" min="1" max="5" defaultValue={q.difficulty} required className="mt-1 w-full rounded-md border px-3 py-2" />
         </label>
 
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Saving…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
           Save changes
-        </button>
+        </SubmitButton>
       </form>
     </main>
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createModule } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 /**
  * NewModulePage — form for creating a new module.
@@ -51,12 +52,12 @@ export default function NewModulePage() {
         </label>
 
         <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
+          <SubmitButton
+            pendingText="Creating…"
             className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
           >
             Create module
-          </button>
+          </SubmitButton>
           {/* Cancel goes back to the list without touching the database */}
           <Link
             href="/modules"

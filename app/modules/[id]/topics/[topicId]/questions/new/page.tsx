@@ -1,4 +1,5 @@
 import { createQuestion } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function NewQuestionPage({
   params,
@@ -52,9 +53,9 @@ export default async function NewQuestionPage({
           <input type="number" name="difficulty" min="1" max="5" defaultValue="3" required className="mt-1 w-full rounded-md border px-3 py-2" />
         </label>
 
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Creating…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
           Create Question
-        </button>
+        </SubmitButton>
       </form>
     </main>
   );
