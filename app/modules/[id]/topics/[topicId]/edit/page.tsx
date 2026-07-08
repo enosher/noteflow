@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateTopic } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function EditTopicPage({
   params,
@@ -32,9 +33,9 @@ export default async function EditTopicPage({
           <span className="text-sm font-medium">Description (optional)</span>
           <textarea name="description" rows={3} defaultValue={topic.description ?? ""} className="mt-1 w-full rounded-md border px-3 py-2" />
         </label>
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Saving…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
           Save changes
-        </button>
+        </SubmitButton>
       </form>
     </main>
   );

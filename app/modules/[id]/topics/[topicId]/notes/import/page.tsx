@@ -1,4 +1,5 @@
 import { createNote } from "../new/actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function ImportNotePage({
   params,
@@ -33,9 +34,9 @@ export default async function ImportNotePage({
             className="mt-1 w-full rounded-md border px-3 py-2 font-mono text-sm"
           />
         </label>
-        <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Importing…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
           Import as note
-        </button>
+        </SubmitButton>
       </form>
     </main>
   );

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateModule } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function EditModulePage({
   params,
@@ -51,12 +52,12 @@ export default async function EditModulePage({
             className="mt-1 w-full rounded-md border px-3 py-2"
           />
         </label>
-        <button
-          type="submit"
+        <SubmitButton
+          pendingText="Saving…"
           className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
           Save changes
-        </button>
+        </SubmitButton>
       </form>
     </main>
   );
