@@ -36,6 +36,8 @@ Reasoning: deliberate feature restraint to protect quality on the must-ship list
 
 **`handle_new_user` trigger creates a `profiles` row on signup.** Lesson learned the hard way: the trigger only fires for signups going forward, not retroactively — accounts created before the trigger existed have no profile row, which surfaced as a confusing FK constraint failure during seed data testing. Fixed with a one-off manual insert for those accounts; documented here so it doesn't get re-debugged from scratch if it resurfaces.
 
+**M2 evaluator crash reports traced to pre-trigger profile gaps.** Investigated the M2 evaluator crash reports and confirmed the failures were caused by `auth.users` records that had no matching `profiles` row. There were **4 affected users** in total, all created before the `handle_new_user` trigger existed; two appeared to be ordinary/non-team accounts rather than obvious team test users. The missing rows were backfilled with a one-off `insert` on **8 July 2026**. Root cause was confirmed as historical data predating the trigger, not a residual signup/profile-creation bug.
+
 ---
 
 ## Storage
