@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { friendlyMessage } from "@/lib/errors";
 
 // Matches the DB check constraint (questions_mcq_has_options): MCQ rows
 // must have a jsonb array of options. We cap at 4 letters here as
@@ -58,7 +59,7 @@ export async function createQuestion(topicId: string, formData: FormData) {
     difficulty,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   // Need module_id to build the redirect path — questions don't carry it
   // directly, so we look it up via the parent topic.

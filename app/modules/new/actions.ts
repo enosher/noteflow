@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { friendlyMessage } from "@/lib/errors";
 
 /**
  * createModule — server action called when the new module form is submitted.
@@ -41,7 +42,7 @@ export async function createModule(formData: FormData) {
   // !!!!! Will be replaced with form-level error display in Week 4 polish.
   if (error) {
     console.error("[createModule] Insert failed:", error.message);
-    throw new Error(error.message);
+    throw new Error(friendlyMessage(error));
   }
 
   revalidatePath("/modules");

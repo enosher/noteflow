@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { friendlyMessage } from "@/lib/errors";
 
 const OPTION_LETTERS = ["A", "B", "C", "D"] as const;
 
@@ -43,7 +44,7 @@ export async function updateQuestion(questionId: string, formData: FormData) {
     })
     .eq("id", questionId);
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   const { data: q } = await supabase
     .from("questions")

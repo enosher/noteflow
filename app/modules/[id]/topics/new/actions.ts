@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { friendlyMessage } from "@/lib/errors";
 
 // moduleId is bound by the page via createTopic.bind(null, moduleId)
 export async function createTopic(moduleId: string, formData: FormData) {
@@ -23,7 +24,7 @@ export async function createTopic(moduleId: string, formData: FormData) {
     order_index: 0,
   });
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   revalidatePath(`/modules/${moduleId}`);
   redirect(`/modules/${moduleId}`);

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { friendlyMessage } from "@/lib/errors";
 
 export async function updateTopic(topicId: string, formData: FormData) {
   const supabase = await createClient();
@@ -29,7 +30,7 @@ export async function updateTopic(topicId: string, formData: FormData) {
     .update({ name, description })
     .eq("id", topicId);
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   // Both paths need revalidating: the module detail page lists topics
   // inline, and the topic's own detail page shows the updated name/desc.
@@ -51,7 +52,7 @@ export async function deleteTopic(topicId: string) {
     .single();
 
   const { error } = await supabase.from("topics").delete().eq("id", topicId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendlyMessage(error));
 
   if (topic) {
     revalidatePath(`/modules/${topic.module_id}`);
