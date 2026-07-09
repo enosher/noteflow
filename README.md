@@ -601,6 +601,15 @@ These screenshots demonstrate the authentication flow, session persistence acros
 ![Dashboard](docs/images/m2-dashboard.png)
 
 ## Setup Instructions
+- Credentials: demo@noteflow.app (password: noteflow)
+- Fresh sign-up also works — any new account can self-seed, no shared login required
+- If an account is empty, click "Or load sample data to explore first" on the
+  Modules page (/modules) — instantly adds CS2030S and GEA1000, ~20 questions,
+  3 weeks of quiz history
+- What to look at first: dashboard weak-topic flags (Recursion in CS2030S,
+  Data Visualization Fallacies in GEA1000) -> recommendation card -> score breakdown
+- GEA1000 exists specifically so non-CS evaluators/students have a module that
+  isn't a programming course
 
 ### Prerequisites
 - Node.js 22+ (install via nvm)

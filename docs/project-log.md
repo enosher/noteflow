@@ -165,8 +165,13 @@ Each row records work done on the project. Log every hour, including self-learni
 
 | Date       | Task                                                                                                      | Hours |
 |------------|-----------------------------------------------------------------------------------------------------------|-------|
-|            |                                                                                                           |       |
-| **Total**  |                                                                                                           | **0.0** |
+| 2026-06-03 | Reviewed and graded peer teams' Milestone 2 against the rubrics | 1.0 |
+| 2026-06-07 | Reviewed TA and peer feedback; ideated implementation changes in response | 2.0 |
+| 2026-07-08 | Reproduced M2 evaluator crash reports on fresh account; queried auth.users for orphaned profiles, found 4 affected rows, backfilled via insert; confirmed root cause was pre-trigger signups, documented in decisions-log | 1.5 |
+| 2026-07-08 | Added app/error.tsx route-level error boundary and lib/errors.ts Postgres error translation; swapped throw new Error(error.message) for friendlyMessage(error) across 14 call sites in 10 server action files | 1.0 |
+| 2026-07-08 | Fixed duplicate-create bug from double-clicking submit buttons; wired existing SubmitButton (useFormStatus) into 10 create/edit forms with per-form pending labels | 0.5 |
+| 2026-07-08 | Added next-themes with class-based dark mode toggle; replaced ad-hoc CSS vars with semantic design tokens (surface/card/ink/brand/line/muted) and mastery colour scale in globals.css; built MasteryDot component, wired into dashboard accuracy table | 2.0 |
+| **Total**  |                                                                                                           | **8.0** |
 
 ### Enosh Er
 
