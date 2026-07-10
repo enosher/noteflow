@@ -6,6 +6,7 @@ import {
   difficultyMatchScore,
   scoreQuestion,
   getScoreBreakdown,
+  applyBlockedPenalty,
 } from "./recommender";
 
 describe("topicWeaknessScore", () => {
@@ -107,5 +108,15 @@ describe("getScoreBreakdown", () => {
     for (const term of terms) {
       expect(term.weighted).toBeCloseTo(term.rawScore * term.weight, 10);
     }
+  });
+});
+
+describe("applyBlockedPenalty", () => {
+  it("halves the score when the topic is blocked", () => {
+    expect(applyBlockedPenalty(0.8, true)).toBeCloseTo(0.4);
+  });
+
+  it("leaves the score untouched when not blocked", () => {
+    expect(applyBlockedPenalty(0.8, false)).toBe(0.8);
   });
 });
