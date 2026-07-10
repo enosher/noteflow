@@ -43,6 +43,12 @@ export default async function ModuleDetailPage({
         </div>
         <div className="flex gap-2">
           <Link
+            href={`/modules/${id}/graph`}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Concept graph
+          </Link>
+          <Link
             href={`/modules/${id}/edit`}
             className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
           >

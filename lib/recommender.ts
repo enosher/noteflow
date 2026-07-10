@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/types/database";
 import { getTopicAccuracy } from "@/lib/weak-topics";
+import { blockedTopics } from "@/lib/prereq";
 
 // Re-exported so the dashboard only needs one import for both accuracy
 // and recommendations, rather than going into two different lib files.
@@ -17,6 +18,16 @@ export const WEIGHTS = {
 };
 
 const RECENCY_WINDOW_DAYS = 7;
+
+// Concept-graph gating: a blocked topic (its prerequisite is weak, per
+// lib/prereq.blockedTopics) is deprioritized rather than excluded.
+// Excluding it directly would leave the recommender with nothing to say
+// on a module where every topic sits behind one weak prerequisite.
+// Halving the score keeps it eligible but pushes it behind anything
+// un-gated, and it is applied on top of the transparent breakdown rather
+// than folded into it, so the four scoring terms below still always
+// sum to `breakdown.total` (pinned by a unit test).
+export const BLOCKED_PENALTY_FACTOR = 0.5;
 
 export function topicWeaknessScore(accuracy: number | undefined): number {
   // No attempts yet means we don't know; so 0.5 (neutral) rather
@@ -58,6 +69,13 @@ export function scoreQuestion(input: {
   );
 }
 
+// Applies the concept-graph gating penalty on top of a raw score. Kept as
+// its own function (rather than inlined at the call site) so it has the
+// same "one thing, unit-testable" shape as the four term functions above.
+export function applyBlockedPenalty(score: number, isBlocked: boolean): number {
+  return isBlocked ? score * BLOCKED_PENALTY_FACTOR : score;
+}
+
 export type ScoreTerm = {
   label: string;
   rawScore: number; // 0-1, before the weight is applied
@@ -74,7 +92,9 @@ export type ScoreBreakdown = {
 // of summed -- this is what the debug UI renders so a recommendation is
 // never a black box. total is computed by summing the terms (not by
 // calling scoreQuestion again) so the two can never silently drift apart;
-// a unit test below pins them to always match.
+// a unit test below pins them to always match. The blocked-topic penalty
+// is intentionally NOT folded in here; it's surfaced separately on
+// Recommendation so the breakdown keeps showing the four true terms.
 export function getScoreBreakdown(input: {
   topicAccuracy: number | undefined;
   lastAttemptedAt: string | null;
@@ -127,6 +147,7 @@ export type Recommendation = {
   topic_name: string;
   module_id: string;
   breakdown: ScoreBreakdown;
+  blocked: boolean; // true if topic_id is gated by a weak prerequisite
 };
 
 export async function getRecommendedQuestion(
@@ -141,6 +162,17 @@ export async function getRecommendedQuestion(
 
   const topicStats = await getTopicAccuracy(supabase);
   const accuracyByTopic = new Map(topicStats.map((t) => [t.topic_id, t.accuracy]));
+
+  // Prerequisite edges across every module the user owns (RLS scopes this
+  // the same way it scopes questions above), so gating is computed once
+  // rather than per-module.
+  const { data: edges } = await supabase
+    .from("topic_prerequisites")
+    .select("topic_id, prerequisite_topic_id");
+  const blocked = blockedTopics(
+    edges ?? [],
+    topicStats.map((t) => ({ topic_id: t.topic_id, accuracy: t.accuracy, attempts: t.attempts }))
+  );
 
   // Fetch uses newest so the first hit per question in the loop
   // below is automatically the most recent one; no sorting needed later.
@@ -173,7 +205,7 @@ export async function getRecommendedQuestion(
       questionDifficulty: q.difficulty,
       userAvgDifficulty,
     };
-    const score = scoreQuestion(input);
+    const score = applyBlockedPenalty(scoreQuestion(input), blocked.has(q.topic_id));
     if (!best || score > best.score) best = { question: q, score, input };
   }
 
@@ -191,5 +223,6 @@ export async function getRecommendedQuestion(
     topic_name: topic?.name ?? "",
     module_id: topic?.module_id ?? "",
     breakdown: getScoreBreakdown(best.input),
+    blocked: blocked.has(best.question.topic_id),
   };
 }

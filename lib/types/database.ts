@@ -309,6 +309,42 @@ export type Database = {
           },
         ]
       }
+      topic_prerequisites: {
+        Row: {
+          created_at: string
+          id: string
+          prerequisite_topic_id: string
+          topic_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          prerequisite_topic_id: string
+          topic_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          prerequisite_topic_id?: string
+          topic_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_prerequisites_prerequisite_topic_id_fkey"
+            columns: ["prerequisite_topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topic_prerequisites_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       topics: {
         Row: {
           created_at: string

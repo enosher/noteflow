@@ -59,3 +59,82 @@ create policy "review_schedule_update_own"
 drop policy if exists "review_schedule_delete_own" on public.review_schedule;
 create policy "review_schedule_delete_own"
   on public.review_schedule for delete using (auth.uid() = user_id);
+
+
+-- 2. topic_prerequisites (concept graph edges)
+--    An edge (topic_id, prerequisite_topic_id): topic_id requires prerequisite_topic_id first.
+--    Cycles are rejected in app code (lib/prereq.ts) before the insert, since a check can't traverse
+--    a graph and Postgres has no built-in "no cycles" constraint.
+create table if not exists public.topic_prerequisites (
+  id                     uuid primary key default gen_random_uuid(),
+  topic_id               uuid not null references public.topics(id) on delete cascade,
+  prerequisite_topic_id  uuid not null references public.topics(id) on delete cascade,
+  created_at             timestamptz not null default now(),
+  constraint topic_prereq_no_self check (topic_id <> prerequisite_topic_id),
+  constraint topic_prereq_unique unique (topic_id, prerequisite_topic_id)
+);
+
+create index if not exists topic_prereq_topic_idx
+  on public.topic_prerequisites(topic_id);
+create index if not exists topic_prereq_prereq_idx
+  on public.topic_prerequisites(prerequisite_topic_id);
+
+-- Same-module enforcement. A CHECK can't join, so: trigger.
+create or replace function public.topic_prereq_same_module()
+returns trigger
+language plpgsql
+as $$
+declare
+  m1 uuid;
+  m2 uuid;
+begin
+  select module_id into m1 from public.topics where id = new.topic_id;
+  select module_id into m2 from public.topics where id = new.prerequisite_topic_id;
+  if m1 is null or m2 is null or m1 <> m2 then
+    raise exception 'prerequisite edges must connect topics in the same module';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists topic_prereq_same_module on public.topic_prerequisites;
+create trigger topic_prereq_same_module
+  before insert or update on public.topic_prerequisites
+  for each row execute function public.topic_prereq_same_module();
+
+alter table public.topic_prerequisites enable row level security;
+
+-- Ownership flows through topic_id -> module -> user, same shape as
+-- every other child-table policy in the M2/M3 schema.
+drop policy if exists "topic_prereq_select_own" on public.topic_prerequisites;
+create policy "topic_prereq_select_own"
+  on public.topic_prerequisites for select
+  using (
+    exists (
+      select 1 from public.topics t
+      join public.modules m on m.id = t.module_id
+      where t.id = topic_prerequisites.topic_id and m.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "topic_prereq_insert_own" on public.topic_prerequisites;
+create policy "topic_prereq_insert_own"
+  on public.topic_prerequisites for insert
+  with check (
+    exists (
+      select 1 from public.topics t
+      join public.modules m on m.id = t.module_id
+      where t.id = topic_prerequisites.topic_id and m.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "topic_prereq_delete_own" on public.topic_prerequisites;
+create policy "topic_prereq_delete_own"
+  on public.topic_prerequisites for delete
+  using (
+    exists (
+      select 1 from public.topics t
+      join public.modules m on m.id = t.module_id
+      where t.id = topic_prerequisites.topic_id and m.user_id = auth.uid()
+    )
+  );
