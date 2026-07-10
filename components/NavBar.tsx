@@ -4,6 +4,7 @@ import { NavLinks } from "./NavLinks";
 import { Zoom } from "./Zoom";
 import LogoutButton from "@/app/dashboard/logout-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { getDueReviewCount } from "@/app/review/actions";
 
 export async function NavBar() {
   const supabase = await createClient();
@@ -11,12 +12,11 @@ export async function NavBar() {
 
   if (!user) return null;
 
+  const dueCount = await getDueReviewCount();
+
   return (
     <nav className="flex items-center justify-between border-b border-[#E7E4DF] bg-[#FAFAF9] px-6 py-3">
       <div className="flex items-center gap-6">
-        {/* Icon and wordmark live side by side but aren't nested inside
-            each other - Zoom is its own button, "NoteFlow" is its own
-            link. Buttons inside links get weird across browsers. */}
         <div className="flex items-center gap-2">
           <Zoom />
           <Link
@@ -26,7 +26,7 @@ export async function NavBar() {
             NoteFlow
           </Link>
         </div>
-        <NavLinks />
+        <NavLinks dueCount={dueCount} />
       </div>
       <div className="flex items-center gap-3">
         <ThemeToggle />

@@ -104,3 +104,19 @@ export async function updateReviewSchedule(
   revalidatePath("/review");
   revalidatePath("/dashboard");
 }
+
+// Lightweight count for the nav badge
+export async function getDueReviewCount(): Promise<number> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { count, error } = await supabase
+    .from("review_schedule")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .lte("due_at", new Date().toISOString());
+  if (error) throw new Error(friendlyMessage(error));
+
+  return count ?? 0;
+}
