@@ -15,7 +15,7 @@ export default async function ReviewPage() {
       <h1 className="text-2xl font-semibold text-ink">Review</h1>
       <p className="mt-1 text-sm text-muted">
         {due.length === 0
-          ? "Nothing due — answering quiz questions schedules them for review at growing intervals."
+          ? "Nothing due - answering quiz questions schedules them for review at growing intervals."
           : `${due.length} question${due.length === 1 ? "" : "s"} due for review.`}
       </p>
       {due.length > 0 && <ReviewSession initialQueue={due} />}
