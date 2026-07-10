@@ -46,7 +46,7 @@ export default function LoginPage() {
             Try the demo
           </SubmitButton>
           <p className="mt-2 text-center text-sm text-muted">
-            One click, no signup — explore a pre-filled account.
+            One click, no signup - explore a pre-filled account.
           </p>
         </form>
 
