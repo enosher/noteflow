@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { updateReviewSchedule } from "@/app/review/actions";
+import { friendlyMessage } from "@/lib/errors";
 
 export async function submitAnswer(
   questionId: string,
@@ -42,7 +44,11 @@ export async function submitAnswer(
     time_taken_ms: timeTakenMs,
   });
 
-  if (insertError) throw new Error(insertError.message);
+  if (insertError) throw new Error(friendlyMessage(insertError));
+
+  // Every graded answer feeds the SM-2 schedule too — wrong answers get
+  // reviewed again tomorrow, right answers push the interval out.
+  await updateReviewSchedule(questionId, isCorrect);
 
   return { isCorrect };
 }
