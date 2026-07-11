@@ -157,7 +157,18 @@ export async function generateQuestionDrafts(
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts: [{ text: userPrompt }] }],
         generationConfig: {
-          maxOutputTokens: 2000,
+          // gemini-3.5-flash defaults to thinkingLevel "medium", and
+          // thinking tokens draw from this SAME maxOutputTokens budget
+          // before the actual answer -- a well-documented gotcha (a
+          // low budget can leave nothing for the real JSON, truncating
+          // it mid-object and breaking parseGenerated's JSON.parse).
+          // This is a "simple task" by Google's own guidance (fact
+          // extraction, not multi-step reasoning), so thinking is
+          // minimized rather than left at the default. "minimal" isn't
+          // a hard guarantee of zero thinking, hence the generous
+          // token ceiling as a second line of defense.
+          thinkingConfig: { thinkingLevel: "minimal" },
+          maxOutputTokens: 4096,
           // API-level JSON enforcement. responseSchema is a second,
           // best-effort layer on top -- parseGenerated below still
           // validates independently either way.
@@ -208,6 +219,11 @@ export async function generateQuestionDrafts(
   try {
     parsed = parseGenerated(text);
   } catch (e) {
+    // Logged raw (truncated) so a future parse failure is diagnosable
+    // from this one log line instead of another round of guessing --
+    // this is exactly the gap that made the thinking-token truncation
+    // bug slow to track down the first time.
+    console.error("Gemini response failed to parse:", text.slice(0, 2000));
     return { ok: false, message: e instanceof Error ? e.message : "Couldn't read Gemini's response." };
   }
 
