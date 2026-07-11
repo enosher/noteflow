@@ -21,11 +21,9 @@ export async function submitAnswer(
 
   if (questionError || !question) throw new Error("Question not found.");
 
-  // MCQ/short-answer: trimmed, case-insensitive match — this is good enough for M2.
-  // Long-answer "correctness" by string match isn't meaningful, so we
-  // always record it as correct (the attempt is still logged for time
-  // tracking) rather than unfairly tanking a topic's accuracy.
-  // Decisions-log note: proper long-answer grading is out of scope for M2. Perhaps address in M3.
+  // MCQ/short-answer: trimmed, case-insensitive match, good enough for M2.
+  // Long-answer can't be graded by string match, so it's always marked
+  // correct (attempt still logs for time tracking) - proper grading is M3.
   let isCorrect: boolean;
   if (question.question_type === "long_answer") {
     isCorrect = true;
@@ -46,7 +44,7 @@ export async function submitAnswer(
 
   if (insertError) throw new Error(friendlyMessage(insertError));
 
-  // Every graded answer feeds the SM-2 schedule too — wrong answers get
+  // Every graded answer feeds the SM-2 schedule too - wrong answers get
   // reviewed again tomorrow, right answers push the interval out.
   await updateReviewSchedule(questionId, isCorrect);
 

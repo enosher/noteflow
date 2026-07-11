@@ -1,11 +1,12 @@
 // scripts/seed-demo.ts
 //
-// Populates the shared demo account so an evaluator's first screen is a
-// working product, not an empty state. Idempotent-ish: wipes the demo
-// user's modules first, then rebuilds. Run with:
+// Fills the shared demo account with sample data, so a visitor's first
+// screen looks like a working product, not an empty one. Safe to run
+// again: it wipes the demo user's modules first, then rebuilds them.
+// Run with:
 //   npx tsx scripts/seed-demo.ts
 //
-// Uses the service-role key, so RLS is bypassed — this script must only
+// Uses the service-role key, so RLS is bypassed - this script must only
 // ever run locally against .env.local, never ship to the client bundle.
 
 import { createClient } from '@supabase/supabase-js';
@@ -24,8 +25,8 @@ if (!url || !serviceKey || !DEMO) {
 
 const db = createClient(url, serviceKey);
 
-// Attempt history has to span weeks — with same-day timestamps every
-// recency factor collapses to one value and the breakdown looks fake.
+// Attempt history has to span weeks - same-day timestamps would collapse
+// every recency factor to one value and make the breakdown look fake.
 const daysAgo = (n: number) =>
   new Date(Date.now() - n * 24 * 60 * 60 * 1000).toISOString();
 
@@ -33,7 +34,7 @@ async function main() {
   // Start clean. Cascades take out topics/notes/questions/attempts.
   await db.from('modules').delete().eq('user_id', DEMO);
 
-  // ---- CS2030S: the "story" module — one strong topic, one weak ----
+  // CS2030S: the "story" module - one strong topic, one weak
   const { data: cs2030, error: e1 } = await db
     .from('modules')
     .insert({
@@ -70,7 +71,7 @@ async function main() {
       topic_id: t['Recursion'],
       title: 'Recursion patterns',
       content:
-        '# Recursion\n\nEvery recursive method needs:\n\n1. **Base case** — terminates without recursing\n2. **Recursive case** — reduces towards the base case\n\nStack depth is bounded by JVM stack size; prefer tail-recursive shapes or iteration for deep inputs.',
+        '# Recursion\n\nEvery recursive method needs:\n\n1. **Base case** - terminates without recursing\n2. **Recursive case** - reduces towards the base case\n\nStack depth is bounded by JVM stack size; prefer tail-recursive shapes or iteration for deep inputs.',
     },
   ]);
 
@@ -112,11 +113,9 @@ async function main() {
     .select();
   if (e3) throw e3;
 
-  // Attempt history — this is what makes Track and Adapt come alive.
-  // Recursion is scripted to land around 40% accuracy across enough
-  // attempts to clear the weak-topic gate (accuracy < 0.60 AND
-  // attempts >= 3). Inheritance lands strong. Timestamps spread over
-  // ~3 weeks so mistake-recency and revision-recency terms diverge.
+  // Attempt history is what makes Track and Adapt come alive: Recursion
+  // lands ~40% accuracy to clear the weak-topic gate, Inheritance lands
+  // strong, and timestamps spread over ~3 weeks so recency terms diverge.
   const byPrompt = Object.fromEntries(questions.map((q) => [q.prompt, q]));
   const attempt = (
     prompt: string,
@@ -158,7 +157,7 @@ async function main() {
   const { error: e4 } = await db.from('quiz_attempts').insert(attempts);
   if (e4) throw e4;
 
-  // ---- Second and third modules: thinner, just so the sidebar isn't lonely ----
+  // Second and third modules: thinner, just so the sidebar isn't lonely
   const { data: others, error: e5 } = await db
     .from('modules')
     .insert([

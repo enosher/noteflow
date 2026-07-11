@@ -8,15 +8,15 @@ export default async function ImportNotePage({
 }) {
   const { topicId } = await params;
 
-  // Import creates a note with pre-pasted content
-  // Binding subtopicId to null here (instead of topicId) keeps the note at topic level. See decisions log
+  // Import creates a note with pre-pasted content. subtopicId is bound
+  // to null, keeping the note at topic level - see the decisions log.
   const importAsNote = createNote.bind(null, topicId, null);
 
   return (
     <main className="p-6 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-2">Import markdown</h1>
       <p className="text-gray-600 text-sm mb-6">
-        {"Paste markdown from your existing notes -- it'll be saved as a new note in this topic."}
+        {"Paste markdown from your existing notes - it'll be saved as a new note in this topic."}
       </p>
       <form action={importAsNote} className="space-y-4">
         <label className="block">
@@ -25,7 +25,7 @@ export default async function ImportNotePage({
         </label>
         <label className="block">
           <span className="text-sm font-medium">Paste markdown content</span>
-          {/* mono font here cuz easier to look for formatting mistakes (like stray #, unmatched ** etc) in a font with fixed width */}
+          {/* Monospace so stray #s and unmatched ** are easy to spot */}
           <textarea
             name="content"
             required

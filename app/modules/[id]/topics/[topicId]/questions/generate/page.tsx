@@ -11,9 +11,8 @@ export default async function GenerateQuestionsPage({
   const { id: moduleId, topicId } = await params;
   const supabase = await createClient();
 
-  // Just for the header -- the generate action re-fetches the topic
-  // itself when it actually needs it, same "small repeated queries over
-  // one shared one" trade-off as the rest of this codebase.
+  // Just for the header - the generate action re-fetches the topic when
+  // it actually needs it, same small-queries trade-off as elsewhere.
   const { data: topic } = await supabase
     .from("topics")
     .select("name")

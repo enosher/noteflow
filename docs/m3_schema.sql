@@ -22,7 +22,7 @@ create table if not exists public.review_schedule (
 create index if not exists review_schedule_due_idx
   on public.review_schedule(user_id, due_at);
 
--- Reuses the shared trigger from m2_schema.sql section 1 — every other
+-- Reuses the shared trigger from m2_schema.sql section 1 - every other
 -- table with updated_at does the same.
 drop trigger if exists review_schedule_set_updated_at on public.review_schedule;
 create trigger review_schedule_set_updated_at
@@ -140,23 +140,16 @@ create policy "topic_prereq_delete_own"
   );
 
 -- 3. questions.source
---    Tags whether a question was hand-written or came from the AI
---    generation feature. Defaults to 'manual' so every pre-existing row (and every row inserted through
---    the ordinary createQuestion) needs no backfill.
+--    Tags a question as hand-written or AI-generated. Defaults to
+--    'manual' so no pre-existing or ordinary-insert row needs backfill.
 alter table public.questions
   add column if not exists source text not null default 'manual'
   check (source in ('manual', 'ai'));
 
 -- 4. ai_generation_log
---    One row per Gemini call attempt (not per accepted question). Exists
---    to enforce a shared daily cap on the single GEMINI_API_KEY this
---    deployment uses -- protects it from being exhausted by one
---    enthusiastic tester during a grading window, leaving nothing left
---    for anyone testing after them. No user_id, no ownership: unlike
---    every other table in this schema, the resource being protected
---    (the API key) is shared across every account, not owned by any one
---    of them, so RLS here is "any signed-in user" rather than the usual
---    module-ownership chain.
+--    One row per Gemini call attempt, enforcing a shared daily cap on
+--    this deployment's single GEMINI_API_KEY. No user_id: the key is
+--    shared, not owned, so RLS is "any signed-in user," not the usual chain.
 create table if not exists public.ai_generation_log (
   id         uuid primary key default gen_random_uuid(),
   called_at  timestamptz not null default now()

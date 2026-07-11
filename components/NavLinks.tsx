@@ -1,5 +1,7 @@
 "use client";
 
+// The row of links in the nav bar (Dashboard, Review, etc.), with the
+// current page highlighted and a badge for due reviews.
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "./nav-items";

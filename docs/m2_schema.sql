@@ -1,4 +1,4 @@
--- NoteFlow — Milestone 2 schema
+-- NoteFlow - Milestone 2 schema
 
 
 -- 0. Extensions
@@ -11,7 +11,7 @@ create extension if not exists pgcrypto;
 -- -------------------------------------------------------------
 -- One function, reused as a BEFORE UPDATE trigger on every table that
 -- has updated_at. Avoids repeating the same three-line function six
--- times — quiz_attempts is the only table that skips this, since
+-- times - quiz_attempts is the only table that skips this, since
 -- attempts are immutable (see section 8).
 create or replace function public.set_updated_at()
 returns trigger
@@ -27,10 +27,8 @@ $$;
 --    Extends auth.users. Row created via a trigger on signup.
 -- -------------------------------------------------------------
 -- profiles exists separately from auth.users because auth.users is
--- managed by Supabase Auth and we dont want app data living there.
--- Every other table's ownership chain (modules.user_id -> profiles.id)
--- ultimately ties back to this table rather than auth.users directly,
--- so RLS policies don't need to reach into the auth schema.
+-- managed by Supabase Auth, not app data. Every ownership chain ties
+-- back to this table, so RLS never needs to reach into the auth schema.
 create table if not exists public.profiles (
   id            uuid primary key references auth.users(id) on delete cascade,
   display_name  text,
@@ -43,12 +41,9 @@ create trigger profiles_set_updated_at
   before update on public.profiles
   for each row execute function public.set_updated_at();
 
--- Auto-create a profile row whenever a new auth.users row is inserted.
--- security definer is required here: this trigger fires during signup,
--- before the new user has a session, so it needs to run with elevated
--- privilege to insert into public.profiles on their behalf. Without
--- this, every new signup would 500 because no profiles row exists yet
--- for any of the FK constraints elsewhere in the schema to reference.
+-- Auto-creates a profile row on signup. security definer is required
+-- since this fires before the new user has a session; without elevated
+-- privilege here, every signup would 500 on the missing profiles row.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -70,7 +65,7 @@ create trigger on_auth_user_created
 -- 3. modules
 -- -------------------------------------------------------------
 -- Top of the hierarchy (Module -> Topic -> Subtopic). Every other
--- table's RLS policy eventually joins back up to modules.user_id —
+-- table's RLS policy eventually joins back up to modules.user_id -
 -- this is the single source of truth for "do you own this row."
 create table if not exists public.modules (
   id           uuid primary key default gen_random_uuid(),
@@ -99,7 +94,7 @@ create table if not exists public.topics (
   name         text not null,
   description  text,
   -- Reserved for manual drag-to-reorder; not used by any M2 UI yet
-  -- (every insert sets this to 0 — see createTopic in
+  -- (every insert sets this to 0 - see createTopic in
   -- app/modules/[id]/topics/new/actions.ts).
   order_index  int  not null default 0,
   created_at   timestamptz not null default now(),
@@ -134,20 +129,17 @@ create trigger subtopics_set_updated_at
 -- 6. notes
 --    Must be attached to only exactly 1 of topic / subtopic.
 -- -------------------------------------------------------------
--- Notes can hang off a topic directly or a subtopic, never both and
--- never neither — a note about "Method Overriding" (a subtopic)
--- shouldn't also dangle off "Inheritance" (its parent topic). The
--- check constraint below enforces this at the DB level so it's
--- impossible to violate even if the app-layer validation in
--- createNote() has a bug. (topic_id is null) <> (subtopic_id is null)
--- is a compact XOR: true only when exactly one side is null.
+-- Notes hang off a topic or a subtopic, never both and never neither.
+-- The check constraint enforces this at the database level even if
+-- createNote() has a bug: the check is only true when exactly one of
+-- topic_id and subtopic_id is empty, never both or neither.
 create table if not exists public.notes (
   id           uuid primary key default gen_random_uuid(),
   topic_id     uuid references public.topics(id) on delete cascade,
   subtopic_id  uuid references public.subtopics(id) on delete cascade,
   title        text not null,
   content      text,                -- markdown body, rendered client-side via react-markdown
-  file_url     text,                -- storage path, NOT a public URL — bucket is private,
+  file_url     text,                -- storage path, NOT a public URL - bucket is private,
                                      -- see lib/storage.ts getSignedNoteFileUrl()
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
@@ -166,10 +158,9 @@ create trigger notes_set_updated_at
 -- 7. questions
 --    Always attached to a topic. Optionally narrowed to a subtopic.
 -- -------------------------------------------------------------
--- Unlike notes, questions always have topic_id set — subtopic_id is
--- an optional narrowing, not an alternative parent. This matters for
--- the recommender (lib/recommender.ts), which groups questions by
--- topic_id for weak-topic scoring regardless of whether a subtopic is also set.
+-- Unlike notes, questions always have topic_id set; subtopic_id is an
+-- optional narrowing, not an alternative parent. The recommender groups
+-- by topic_id for weak-topic scoring regardless of any subtopic set.
 create table if not exists public.questions (
   id             uuid primary key default gen_random_uuid(),
   topic_id       uuid not null references public.topics(id)    on delete cascade,
@@ -201,11 +192,9 @@ create trigger questions_set_updated_at
   for each row execute function public.set_updated_at();
 
 -- Trigger: if subtopic_id is set, it must belong to the same topic.
--- A plain CHECK constraint can't reference another table, so this is
--- the only way to enforce "subtopic_id, if present, must actually be
--- a child of topic_id" — e.g. block a question claiming topic_id =
--- Inheritance but subtopic_id = some subtopic that actually belongs
--- to Polymorphism.
+-- A plain CHECK can't reference another table, so this is the only way
+-- to stop a question claiming topic_id = Inheritance with a subtopic
+-- that actually belongs to Polymorphism.
 create or replace function public.questions_check_subtopic_parent()
 returns trigger
 language plpgsql
@@ -232,14 +221,11 @@ create trigger questions_check_subtopic_parent
   before insert or update on public.questions
   for each row execute function public.questions_check_subtopic_parent();
 
--- 8. quiz_attempts (immutable — no updated_at)
+-- 8. quiz_attempts (immutable - no updated_at)
 -- -------------------------------------------------------------
--- Deliberately no updated_at column and no update RLS policy below:
--- an attempt is a historical record of what happened at attempt time.
--- Letting it be edited after the fact would let a user retroactively
--- "fix" a wrong answer and corrupt their own accuracy stats — the
--- whole point of weak-topic detection depends on this data being
--- append-only.
+-- No updated_at, no update policy: an attempt is a historical record.
+-- Letting it be edited would let a user retroactively "fix" a wrong
+-- answer, corrupting the accuracy stats weak-topic detection relies on.
 create table if not exists public.quiz_attempts (
   id             uuid primary key default gen_random_uuid(),
   user_id        uuid not null references public.profiles(id)  on delete cascade,
@@ -252,8 +238,8 @@ create table if not exists public.quiz_attempts (
 
 create index if not exists quiz_attempts_user_id_idx       on public.quiz_attempts(user_id);
 create index if not exists quiz_attempts_question_id_idx   on public.quiz_attempts(question_id);
--- Composite index matches the access pattern in lib/recommender.ts —
--- "most recent attempts for this user, newest first" — rather than
+-- Composite index matches the access pattern in lib/recommender.ts -
+-- "most recent attempts for this user, newest first" - rather than
 -- relying on two separate single-column indexes.
 create index if not exists quiz_attempts_user_attempted_idx
   on public.quiz_attempts(user_id, attempted_at desc);
@@ -268,11 +254,10 @@ create index if not exists quiz_attempts_user_attempted_idx
 --   quiz_attempts owns user_id directly.
 --   profiles: a user can read & update their own row only.
 --
--- Why chose join-based ownership instead of having user_id on
--- every table: it would be faster to check, but it'd duplicate the
--- ownership data in six places and risk drift if a row's parent ever
--- changed. At NoteFlow's scale, the join cost is negligible and
--- there's exactly one source of truth for "who owns this module."
+-- Join-based ownership over a user_id column on every table: faster to
+-- check, but duplicated in six places with drift risk if a parent
+-- changes. At this scale the join cost is negligible and there's one
+-- source of truth for "who owns this module."
 
 alter table public.profiles      enable row level security;
 alter table public.modules       enable row level security;
@@ -320,12 +305,9 @@ create policy "modules_delete_own"
   using (auth.uid() = user_id);
 
 -- ---- topics --------------------------------------------------
--- Helper logic (not a literal SQL function — repeated inline in every
--- policy below): a topic is "yours" if its module belongs to you.
--- Postgres RLS policies can't share a subquery across policies
--- directly, so this exists-clause is duplicated for select/insert/
--- update/delete rather than factored out — a small amount of
--- repetition in exchange for each policy being independently readable.
+-- A topic is "yours" if its module belongs to you. Postgres RLS can't
+-- share a subquery across policies, so this exists-clause repeats for
+-- select/insert/update/delete - a little duplication for readability.
 drop policy if exists "topics_select_own" on public.topics;
 create policy "topics_select_own"
   on public.topics for select
@@ -432,9 +414,8 @@ create policy "subtopics_delete_own"
 
 -- ---- notes ---------------------------------------------------
 -- A note is yours if its (topic_id OR subtopic_id) leads back to you.
--- Because notes can hang off either parent (see the XOR constraint in
--- section 6), every notes policy needs both branches of the OR —
--- there's no single join path that covers both cases at once.
+-- Since notes hang off either parent (the constraint in section 6),
+-- every policy needs both branches - no single join covers both cases.
 drop policy if exists "notes_select_own" on public.notes;
 create policy "notes_select_own"
   on public.notes for select
@@ -576,13 +557,10 @@ create policy "questions_delete_own"
   );
 
 -- ---- quiz_attempts ------------------------------------------
--- user_id is on the row directly — no join needed for select/delete.
--- insert is stricter than the others: it checks BOTH that you're
--- inserting as yourself AND that the question you're attempting is
--- actually one you have access to (via the same module-ownership
--- chain as questions above). Without the second check, a user could
--- spoof an attempt on a question_id belonging to someone else's
--- private module just by guessing/enumerating a UUID.
+-- user_id is on the row directly, so select/delete need no join. insert
+-- is stricter: it checks both that you're inserting as yourself and
+-- that the question is one you can access, or a user could spoof an
+-- attempt on someone else's question by guessing a UUID.
 drop policy if exists "quiz_attempts_select_own" on public.quiz_attempts;
 create policy "quiz_attempts_select_own"
   on public.quiz_attempts for select
@@ -602,7 +580,7 @@ create policy "quiz_attempts_insert_own"
   );
 
 -- No update policy: attempts are immutable (see section 8 comment).
--- Delete is still allowed — e.g. a user might want to clear bad test
+-- Delete is still allowed - e.g. a user might want to clear bad test
 -- data without it permanently skewing their accuracy stats forever.
 drop policy if exists "quiz_attempts_delete_own" on public.quiz_attempts;
 create policy "quiz_attempts_delete_own"

@@ -1,8 +1,8 @@
 'use client';
 
-// Next.js renders this only after something below has thrown, so this
-// is damage control. The digest maps to the server log line without 
-// leaking the actual error message — what we can ask a user to quote in a bug report.
+// Damage control for whatever throws below. The digest maps to a server
+// log line without leaking the real error message - safe for a user to
+// quote back in a bug report.
 export default function Error({
   error,
   reset,
@@ -16,7 +16,7 @@ export default function Error({
         Something went wrong
       </h2>
       <p className="mt-2 text-sm text-[#5B6780]">
-        The action didn&apos;t complete. Your data is safe — try again, or go
+        The action didn&apos;t complete. Your data is safe - try again, or go
         back to the dashboard.
         {error.digest && (
           <span className="mt-1 block text-xs">Reference: {error.digest}</span>

@@ -1,3 +1,4 @@
+// Runs on every page request to keep the user's login session fresh.
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 

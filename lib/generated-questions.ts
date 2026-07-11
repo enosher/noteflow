@@ -1,10 +1,8 @@
 // lib/generated-questions.ts
 //
-// The gate between "whatever Gemini returned" and "a row we'd let into
-// the questions table". responseMimeType: "application/json" on the API
-// call is a request, not a guarantee — models still occasionally wrap
-// output in markdown fences or drop a field, so every candidate gets
-// checked here as if it arrived from an anonymous HTML form.
+// The gate between "whatever Gemini returned" and a row worth inserting.
+// responseMimeType: "application/json" is a request, not a guarantee, so
+// every candidate is checked here as if it came from an anonymous form.
 
 export type QuestionType = "mcq" | "short_answer";
 
@@ -16,20 +14,15 @@ export type GeneratedQuestion = {
   difficulty: number;
 };
 
-// long_answer is deliberately not a valid output here, even though the
-// questions table supports it. submitAnswer() marks every long_answer
-// attempt correct (string-match grading isn't meaningful for free text),
-// so an AI-generated long_answer question would quietly inflate a
-// topic's accuracy stats with corrects nobody actually earned. Scoping
-// generation to gradeable types is a quality control, not a gap —
-// anyone who wants a long-answer question can still add one by hand.
+// long_answer is deliberately excluded even though the questions table
+// supports it: submitAnswer() marks every long_answer attempt correct,
+// so an AI-generated one would quietly inflate accuracy stats. Anyone
+// who wants one can still add it by hand.
 export const VALID_TYPES = new Set<QuestionType>(["mcq", "short_answer"]);
 
-// Single source of truth for "is this draft safe to insert" — run once
-// right after parsing, and run again unconditionally before save, since
-// a user can edit a previously-valid draft (e.g. retype the answer) into
-// an invalid one in between. Trusting the parse-time check at save time
-// is exactly the bug the MCQ-answer-mismatch constraint warns about.
+// Single source of truth for "is this draft safe to insert." Runs once
+// after parsing and again before save, since a user can edit a draft
+// (retype the answer) into invalid between those two points.
 export function isValidDraft(draft: {
   prompt: string;
   answer: string;
@@ -48,22 +41,20 @@ export function isValidDraft(draft: {
     const opts = draft.options;
     if (!Array.isArray(opts) || opts.length < 2) return false;
     if (opts.some((o) => typeof o !== "string" || !o.trim())) return false;
-    // Same rule createQuestion enforces manually: an MCQ whose answer
-    // isn't verbatim one of its own options is worse than no question
-    // at all — it's ungradeable and silently tanks quiz accuracy.
+    // Same rule createQuestion enforces manually: an answer that isn't
+    // verbatim one of its own options is ungradeable, not just wrong.
     if (!opts.includes(draft.answer.trim())) return false;
   }
 
   return true;
 }
 
-// Parses the raw model output into validated drafts. Invalid candidates
-// are dropped here, before the user ever sees them — there's no value
-// in showing someone a card they can't save anyway; better to just
-// generate one fewer question than to hand over a broken review item.
+// Parses raw model output into validated drafts. Invalid candidates are
+// dropped before the user sees them - better to generate one fewer
+// question than hand over a broken review card.
 export function parseGenerated(raw: string): GeneratedQuestion[] {
-  // Belt-and-suspenders: responseMimeType should stop this, but models
-  // sometimes wrap JSON in ```json fences regardless of instructions.
+  // Extra safety check: responseMimeType should stop this, but models
+  // sometimes wrap JSON in ```json fences anyway.
   const cleaned = raw.replace(/```json|```/g, "").trim();
 
   let parsed: unknown;
@@ -105,12 +96,9 @@ export function parseGenerated(raw: string): GeneratedQuestion[] {
   return out;
 }
 
-// Token-set Jaccard similarity. Exact-string dedup misses trivial
-// rephrasings ("What is inheritance?" vs "What's inheritance?"), and
-// full semantic dedup would mean pulling in embeddings for a single
-// button click — token overlap at 0.8 is the pragmatic middle, chosen
-// by eyeballing real near-duplicate pairs during development (see
-// decisions-log.md).
+// Compares two questions by how many words they share, since an exact
+// text match would miss simple rewordings. 80% shared words is the
+// cutoff, chosen by testing it against real near-duplicate examples.
 function tokens(s: string): Set<string> {
   return new Set(
     s
@@ -138,10 +126,9 @@ export function isDuplicate(
   return false;
 }
 
-// Filters generated questions against both the topic's existing
-// questions AND each other — without the second check, a batch could
-// pass dedup against the DB while still containing two near-identical
-// generated prompts side by side in the review list.
+// Filters against both existing questions and each other - without the
+// second check, a batch could pass DB dedup while still holding two
+// near-identical prompts side by side in the review list.
 export function dedupe(
   generated: GeneratedQuestion[],
   existingPrompts: string[]
@@ -157,11 +144,9 @@ export function dedupe(
   return kept;
 }
 
-// Server-side clamp for the count field on the generate form. The UI
-// input already has min/max attributes, but HTML attributes are a
-// suggestion, not a guarantee -- anyone can hit the server action
-// directly with count: 999. Floor() before clamping so "4.7" from a
-// stray form quirk doesn't become a fractional question count.
+// Server-side clamp for the count field: HTML min/max attributes are a
+// suggestion, not a guarantee, since anyone can hit the action directly
+// with count: 999. Floored first so "4.7" can't sneak through.
 export function clampCount(count: number): number {
   const n = Math.floor(count);
   if (!Number.isFinite(n)) return 5;
@@ -177,11 +162,9 @@ export function normalizeTypes(types: string[]): QuestionType[] {
   return unique.length > 0 ? unique : ["mcq", "short_answer"];
 }
 
-// The JSON shape we ask Gemini to honour via generationConfig.responseSchema,
-// on top of responseMimeType: "application/json". Best-effort only --
-// parseGenerated() above doesn't trust that either constraint actually
-// held, so a schema quirk on Gemini's side degrades to "fewer questions
-// survive parsing", never to a bad row reaching the database.
+// The shape requested via generationConfig.responseSchema, on top of
+// responseMimeType. Best-effort only - parseGenerated() above still
+// distrusts both, so a schema quirk means fewer survivors, never a bad row.
 export const GENERATION_RESPONSE_SCHEMA = {
   type: "ARRAY",
   items: {
@@ -197,10 +180,9 @@ export const GENERATION_RESPONSE_SCHEMA = {
   },
 } as const;
 
-// Builds both halves of the Gemini request. Kept pure (string-in,
-// string-out) so prompt wording changes are unit-testable without a
-// live API call -- e.g. "does the prompt actually mention the topic
-// name" is a one-line assertion instead of a manual check.
+// Builds both halves of the Gemini request. Just takes strings in and
+// returns strings out, so wording changes can be tested without a live
+// call - "does the prompt mention the topic name" becomes one check.
 export function buildGenerationPrompt(params: {
   topicName: string;
   notesText: string;
@@ -209,15 +191,12 @@ export function buildGenerationPrompt(params: {
   existingPrompts: string[];
 }): { systemPrompt: string; userPrompt: string } {
   const typeList = params.types.join(" or ");
-  // Interpolated rather than hardcoded -- if the caller only asked for
-  // mcq, the format line shouldn't imply short_answer is still on the
-  // table, or the "only generate X" rule right below it contradicts
-  // the shape above it.
+  // Interpolated, not hardcoded - if the caller asked for mcq only, the
+  // format line shouldn't imply short_answer is still on the table.
   const typeUnion = params.types.map((t) => `"${t}"`).join(" | ");
 
-  // Per-type rule lines are conditional, not just the union above --
-  // handing the model an "options must be null" instruction for a type
-  // it was told not to generate is noise at best, contradictory at worst.
+  // Per-type rules are conditional too - an "options must be null"
+  // instruction for a type that wasn't requested is just noise.
   const typeRules = [
     params.types.includes("mcq")
       ? '- For mcq: 2 to 4 options, and "answer" must be copied verbatim from one of them.'
@@ -232,7 +211,7 @@ Return ONLY a JSON array, no markdown fences, no prose. Each element:
 {"prompt": string, "answer": string, "question_type": ${typeUnion}, "options": [2-4 strings] | null, "difficulty": 1-5}
 Rules:
 - Only generate these question types: ${typeList}.
-- Questions must be answerable from the notes alone -- don't invent facts the notes don't support.
+- Questions must be answerable from the notes alone - don't invent facts the notes don't support.
 ${typeRules.join("\n")}
 - Do not repeat or trivially rephrase any of these existing questions: ${JSON.stringify(
     params.existingPrompts.slice(0, 30)
@@ -243,54 +222,42 @@ ${typeRules.join("\n")}
   return { systemPrompt, userPrompt };
 }
 
-// Shown whenever the deployment itself can't talk to Gemini at all --
-// missing GEMINI_API_KEY, or a key Gemini rejects outright (401/403).
-// Distinct from every other message here on purpose: "try again" is
-// actively bad advice for a config problem, since retrying can never
-// fix it. An evaluator hitting this on a live deployment has no way to
-// resolve it themselves, so the message points at proof the feature
-// works instead of asking them to do something that won't help.
+// Shown when the deployment can't talk to Gemini at all: missing
+// GEMINI_API_KEY, or a key Gemini rejects outright (401/403). "Try again"
+// is bad advice for a config problem an evaluator can't fix themselves,
+// so this points at proof the feature works instead.
 export const NOT_CONFIGURED_MESSAGE =
-  "AI question generation isn't configured on this deployment right now — see the milestone video for a live demo of this feature.";
+  "AI question generation isn't configured on this deployment right now - see the milestone video for a live demo of this feature.";
 
-// Deliberately well under Gemini's actual free-tier daily ceiling. This
-// deployment shares ONE GEMINI_API_KEY across every tester who signs up
-// -- without a self-imposed cap set below Google's real limit, one
-// enthusiastic tester spamming "Generate questions" could exhaust the
-// whole day's quota and lock everyone else out with no warning. The
-// margin also means our own cap trips first, before Google's actual
-// 429 does, so this message (not the generic rate-limit one) is what
-// testers actually see when the shared quota is running low.
+// Well under Gemini's real free-tier ceiling: one shared GEMINI_API_KEY
+// means an enthusiastic tester spamming "Generate" could otherwise
+// exhaust the day's quota and lock everyone else out. Tripping this cap
+// first, before Google's own 429, keeps the message specific.
 export const DAILY_GENERATION_CAP = 40;
 
-// Distinct from classifyGeminiError's 429 case on purpose: a real
-// Gemini rate limit is usually a per-minute thing ("wait a bit"), but
-// hitting OUR cap means the shared daily allowance is genuinely spent
-// for the day -- "try again in a minute" would be actively misleading,
-// so this points at proof the feature works instead, same reasoning as
-// NOT_CONFIGURED_MESSAGE.
+// Distinct from classifyGeminiError's 429: a real Gemini rate limit is
+// per-minute, but this cap means the day's shared allowance is spent.
+// "Try again in a minute" would mislead, so this points at proof the
+// feature works instead, same reasoning as NOT_CONFIGURED_MESSAGE.
 export const USAGE_CAPPED_MESSAGE =
-  "AI question generation has hit its shared usage cap for today — see the milestone video for a live demo of this feature, or try again tomorrow.";
+  "AI question generation has hit its shared usage cap for today - see the milestone video for a live demo of this feature, or try again tomorrow.";
 
 export function isOverDailyCap(callsInLast24h: number): boolean {
   return callsInLast24h >= DAILY_GENERATION_CAP;
 }
 
-// Maps a Gemini HTTP failure to a message a user can act on. Split out
-// as a pure function (rather than inlined in the fetch call) so the
-// mapping itself is unit-testable without a network mock — and so a
-// 429 reads as "wait a bit", not the same generic wording as a 500.
-// Never suggests enabling billing: on the free tier that's a trap, not
-// a fix (it deletes the free tier rather than lifting a limit).
+// Maps a Gemini failure to a message a user can act on. Pulled out as
+// its own function so it can be tested without a real network call, and
+// a 429 reads as "wait a bit" instead of generic error wording.
 export function classifyGeminiError(status: number): string {
   if (status === 401 || status === 403) {
     return NOT_CONFIGURED_MESSAGE;
   }
   if (status === 429) {
-    return "Gemini's free-tier rate limit is maxed out right now — wait a minute and try again.";
+    return "Gemini's free-tier rate limit is maxed out right now - wait a minute and try again.";
   }
   if (status >= 500) {
-    return "Gemini is having trouble on its end — try again shortly.";
+    return "Gemini is having trouble on its end - try again shortly.";
   }
-  return "Question generation is unavailable right now — try again in a moment.";
+  return "Question generation is unavailable right now - try again in a moment.";
 }

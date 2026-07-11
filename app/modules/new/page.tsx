@@ -3,10 +3,10 @@ import { createModule } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
 
 /**
- * NewModulePage — form for creating a new module.
+ * NewModulePage - form for creating a new module.
  *
- * Server component. The form's action prop points directly at the
- * createModule server action — no client JS or event handlers needed.
+ * Server component; the form's action prop points straight at the
+ * createModule server action, so no client JS is needed here.
  */
 export default function NewModulePage() {
   return (

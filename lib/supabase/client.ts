@@ -1,3 +1,4 @@
+// Connects to Supabase from the browser (for client components).
 import { createBrowserClient } from '@supabase/ssr'
 import { Database } from '@/lib/types/database'
 

@@ -1,5 +1,7 @@
 'use server';
 
+// Logs in as the shared demo account, so visitors can try the app
+// without signing up first.
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 

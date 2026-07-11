@@ -26,10 +26,9 @@ export async function createNote(
     fileUrl = await uploadNoteFile(file, user.id);
   }
 
-  // Exactly one topic_id / subtopic_id -- matches the DB check constraint
-  // (notes_exactly_one_parent). This form only creates topic-level
-  // notes (subtopicId is bound to null by the page), but the insert works
-  // if a subtopic-level "new note" link is added later.
+  // Exactly one of topic_id/subtopic_id, matching the DB check constraint
+  // (notes_exactly_one_parent). This form only creates topic-level notes,
+  // but the insert already works if a subtopic-level link shows up later.
   const { error } = await supabase.from("notes").insert({
     topic_id: subtopicId ? null : topicId,
     subtopic_id: subtopicId,

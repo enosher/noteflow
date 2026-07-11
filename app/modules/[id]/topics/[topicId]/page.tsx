@@ -99,8 +99,8 @@ export default async function TopicDetailPage({
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Questions</h2>
           <div className="flex items-center gap-4">
-            {/* Draft questions from this topic's notes via Gemini -- nothing
-                saves until the review screen; see questions/generate. */}
+            {/* Drafts from this topic's notes via Gemini; nothing saves
+                until the review screen - see questions/generate. */}
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/questions/generate`}
               className="text-sm text-blue-600 hover:underline"

@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { friendlyMessage } from "@/lib/errors";
 
 /**
- * createModule — server action called when the new module form is submitted.
+ * createModule - server action called when the new module form is submitted.
  *
  * revalidatePath("/modules") clears the cached module list so the new
  * module appears immediately when we redirect back there.
@@ -27,7 +27,7 @@ export async function createModule(formData: FormData) {
   const description = (formData.get("description") as string)?.trim() || null;
 
   // Basic server-side validation. The form has required attributes too,
-  // but those are bypassable — always validate on the server.
+  // but those are bypassable - always validate on the server.
   if (!code || !name) {
     throw new Error("Code and name are required.");
   }

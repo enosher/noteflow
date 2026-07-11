@@ -1,3 +1,4 @@
+// The form for editing a subtopic's name.
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateSubtopic } from "./actions";

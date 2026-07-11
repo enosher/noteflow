@@ -58,7 +58,7 @@ function wrapLabel(name: string, maxChars = 14): string[] {
 // Hover-card wording; deliberately not MasteryDot's tooltip labels.
 const TONE_LABEL: Record<MasteryTone, string> = {
   untested: "Not tested yet",
-  weak: "Weak — needs practice",
+  weak: "Weak - needs practice",
   mid: "Improving",
   strong: "Strong",
 };
@@ -76,10 +76,9 @@ export default function GraphView({
   const [isPending, startTransition] = useTransition();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Two node arrays, on purpose: the sim mutates a private working array
-  // in rAF callbacks, then publishes an immutable snapshot per tick.
-  // Render only touches the snapshot - the no-refs-during-render rule is
-  // satisfied for real, not silenced.
+  // Two copies of the node list on purpose: the animation updates its own
+  // working copy on every frame, then hands React a fresh copy to render.
+  // The screen only ever reads that second copy, never the live one.
   const [renderNodes, setRenderNodes] = useState<SimNode[]>(() =>
     seedLayout(
       initialGraph.topics.map((t) => t.id),
@@ -150,7 +149,7 @@ export default function GraphView({
     );
   }
 
-  // ---- simulation loop -------------------------------------------------
+  // Simulation loop
 
   const publish = useCallback(() => {
     setRenderNodes(simNodes.current!.map((n) => ({ ...n })));
@@ -182,7 +181,7 @@ export default function GraphView({
     [runSimulation]
   );
 
-  // ---- viewport: fit, zoom, pan ---------------------------------------
+  // Viewport: fit, zoom, pan
 
   const animateTo = useCallback(
     (target: Transform) => {
@@ -227,8 +226,8 @@ export default function GraphView({
     [animateTo, applyTransform]
   );
 
-  // First paint: a burst of synchronous ticks so the raw seed grid is
-  // never seen, then fit and hand off to the loop.
+  // On first load, run the layout forward a bunch of steps right away so
+  // the user never sees the raw starting grid, then hand off to the loop.
   const didInit = useRef(false);
   useLayoutEffect(() => {
     if (didInit.current) return;
@@ -286,7 +285,8 @@ export default function GraphView({
     [applyTransform]
   );
 
-  // React's wheel listeners are passive; preventDefault needs a native bind.
+  // React's built-in scroll handler can't block the page from also
+  // scrolling, so this listens for the scroll wheel directly instead.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -311,7 +311,7 @@ export default function GraphView({
     return { x: (p.x - t.x) / t.k, y: (p.y - t.y) / t.k };
   }
 
-  // ---- pointer gestures -------------------------------------------------
+  // Pointer gestures
 
   function onBackgroundPointerDown(e: React.PointerEvent) {
     (e.target as Element).setPointerCapture(e.pointerId);
@@ -405,12 +405,12 @@ export default function GraphView({
     });
   }
 
-  // ---- rendering (everything below reads only state, never refs) --------
+  // Rendering: everything below reads only state, never refs.
 
   const positions = new Map(renderNodes.map((n) => [n.id, n]));
 
-  // Horizontal-leaning bezier, trimmed to the target's rim. Straight lines
-  // read as clutter; curves read as flow.
+  // A gentle curve, trimmed to the target's edge. Straight lines read as
+  // clutter; curves read as flow.
   function edgePath(from: SimNode, to: SimNode): string {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
@@ -444,7 +444,8 @@ export default function GraphView({
 
   function onMinimapClick(e: React.MouseEvent<SVGSVGElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
-    // Invert the projection, then center the main view there.
+    // Convert the click from minimap coordinates back to real graph
+    // coordinates, then center the main view there.
     const wx = (e.clientX - rect.left - mmOffX) / mmScale + mmBounds.minX;
     const wy = (e.clientY - rect.top - mmOffY) / mmScale + mmBounds.minY;
     const t = transformRef.current;
@@ -677,8 +678,8 @@ export default function GraphView({
           </g>
         </svg>
 
-        {/* Three literal buttons: the refs lint can't follow closures
-            through a mapped tuple array. */}
+        {/* Written out as three separate buttons because the linter can't
+            check refs when they come from a mapped list. */}
         <div className="absolute right-3 top-3 flex flex-col overflow-hidden rounded-md border border-line bg-card shadow-sm">
           <button
             type="button"
@@ -788,7 +789,7 @@ export default function GraphView({
             )}
             {blocked.has(hoveredTopic.id) && (
               <p className="mt-1 text-xs" style={{ color: "var(--mastery-weak)" }}>
-                Gated: a prerequisite is weak — practice that first.
+                Gated: a prerequisite is weak - practice that first.
               </p>
             )}
             {selectedSource && selectedSource !== hoveredTopic.id && (

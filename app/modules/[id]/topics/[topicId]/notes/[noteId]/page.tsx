@@ -1,3 +1,4 @@
+// Shows one note: its title, text, and attached file, with edit/delete buttons.
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { getSignedNoteFileUrl } from "@/lib/storage";

@@ -1,5 +1,6 @@
 'use client'
 
+// A button that signs the user out and sends them back to the login page.
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 

@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
-      {/* Two sibling forms, not one — the demo button posts to a server
+      {/* Two sibling forms, not one - the demo button posts to a server
           action and can't legally nest inside the credentials form. */}
       <div className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-bold text-center">Log in</h1>

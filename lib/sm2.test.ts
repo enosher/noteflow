@@ -13,7 +13,7 @@ describe("qualityFromCorrect", () => {
   });
 });
 
-describe("nextReviewState — success path", () => {
+describe("nextReviewState - success path", () => {
   it("first success: interval 1 day", () => {
     const s = nextReviewState(INITIAL_STATE, 4);
     expect(s.intervalDays).toBe(1);
@@ -41,7 +41,7 @@ describe("nextReviewState — success path", () => {
   });
 });
 
-describe("nextReviewState — failure path (boundary: quality < 3)", () => {
+describe("nextReviewState - failure path (boundary: quality < 3)", () => {
   it("quality 2 resets repetitions and sets interval to 1", () => {
     const mature = { easeFactor: 2.6, intervalDays: 30, repetitions: 5 };
     const s = nextReviewState(mature, 2);

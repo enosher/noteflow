@@ -1,5 +1,6 @@
 "use client";
 
+// A delete button that asks "are you sure?" before it does anything.
 export function DeleteButton({
   action,
   confirmMessage = "Are you sure? This can't be undone.",

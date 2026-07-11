@@ -85,7 +85,7 @@ export async function addPrerequisite(
 
   // App-level guard: the DB has no way to check for cycles at insert time.
   if (wouldCreateCycle(existingEdges ?? [], topicId, prerequisiteTopicId)) {
-    return { error: "That would create a cycle -- a topic can't depend on itself, even indirectly." };
+    return { error: "That would create a cycle - a topic can't depend on itself, even indirectly." };
   }
 
   const { error } = await supabase

@@ -20,9 +20,8 @@ export function isWeakTopic(accuracy: number, attempts: number): boolean {
 }
 
 
- // Computes per-topic accuracy for the user based on their quiz_attempts.
- // RLS on quiz_attempts already scopes the query to the current user, so no user_id filter is used here.
- 
+// Works out accuracy per topic from the user's quiz attempts. RLS
+// already limits this to the current user, so no manual filter is needed.
 export async function getTopicAccuracy(
   supabase: SupabaseClient<Database>
 ): Promise<TopicAccuracy[]> {

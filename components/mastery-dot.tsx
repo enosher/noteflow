@@ -19,7 +19,7 @@ export function masteryTone(
 
 const LABEL: Record<MasteryTone, string> = {
   untested: 'Not tested yet',
-  weak: 'Weak — needs practice',
+  weak: 'Weak - needs practice',
   mid: 'Improving',
   strong: 'Strong',
 };

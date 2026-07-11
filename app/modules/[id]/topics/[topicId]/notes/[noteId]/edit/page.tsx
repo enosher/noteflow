@@ -1,3 +1,4 @@
+// The form for editing a note's title, text, and attached file.
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateNote } from "../actions";

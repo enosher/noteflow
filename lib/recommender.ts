@@ -19,14 +19,9 @@ export const WEIGHTS = {
 
 const RECENCY_WINDOW_DAYS = 7;
 
-// Concept-graph gating: a blocked topic (its prerequisite is weak, per
-// lib/prereq.blockedTopics) is deprioritized rather than excluded.
-// Excluding it directly would leave the recommender with nothing to say
-// on a module where every topic sits behind one weak prerequisite.
-// Halving the score keeps it eligible but pushes it behind anything
-// un-gated, and it is applied on top of the transparent breakdown rather
-// than folded into it, so the four scoring terms below still always
-// sum to `breakdown.total` (pinned by a unit test).
+// A blocked topic (weak prerequisite, per lib/prereq.blockedTopics) gets
+// its score halved rather than excluded, since a module where every topic
+// sits behind one weak link still needs something to recommend.
 export const BLOCKED_PENALTY_FACTOR = 0.5;
 
 export function topicWeaknessScore(accuracy: number | undefined): number {
@@ -49,8 +44,8 @@ export function mistakeRecencyScore(lastAttemptCorrect: boolean | null): number 
 }
 
 export function difficultyMatchScore(questionDifficulty: number, userAvgDifficulty: number): number {
-  // Max gap between any two difficulty values is 4 (1 vs 5), so dividing by 4
-  // keeps this score in [0, 1].
+  // Max gap between any two difficulty values is 4 (1 vs 5), so dividing
+  // by 4 keeps this score between 0 and 1.
   return 1 - Math.abs(questionDifficulty - userAvgDifficulty) / 4;
 }
 
@@ -69,9 +64,9 @@ export function scoreQuestion(input: {
   );
 }
 
-// Applies the concept-graph gating penalty on top of a raw score. Kept as
-// its own function (rather than inlined at the call site) so it has the
-// same "one thing, unit-testable" shape as the four term functions above.
+// Halves the score for a blocked topic. Kept as its own function, not
+// inlined, so it's just as easy to test on its own as the four scoring
+// functions above.
 export function applyBlockedPenalty(score: number, isBlocked: boolean): number {
   return isBlocked ? score * BLOCKED_PENALTY_FACTOR : score;
 }
@@ -80,7 +75,7 @@ export type ScoreTerm = {
   label: string;
   rawScore: number; // 0-1, before the weight is applied
   weight: number;
-  weighted: number; // rawScore * weight -- this is what actually adds to the total
+  weighted: number; // rawScore * weight - this is what actually adds to the total
 };
 
 export type ScoreBreakdown = {
@@ -88,13 +83,9 @@ export type ScoreBreakdown = {
   total: number;
 };
 
-// Same four scoring functions as scoreQuestion, just kept itemised instead
-// of summed -- this is what the debug UI renders so a recommendation is
-// never a black box. total is computed by summing the terms (not by
-// calling scoreQuestion again) so the two can never silently drift apart;
-// a unit test below pins them to always match. The blocked-topic penalty
-// is intentionally NOT folded in here; it's surfaced separately on
-// Recommendation so the breakdown keeps showing the four true terms.
+// Same four terms as scoreQuestion, itemised instead of summed, so the
+// debug UI can show a recommendation is never a black box. `total` is
+// summed directly rather than re-calling scoreQuestion; a test pins them to match.
 export function getScoreBreakdown(input: {
   topicAccuracy: number | undefined;
   lastAttemptedAt: string | null;
@@ -211,9 +202,9 @@ export async function getRecommendedQuestion(
 
   if (!best) return null;
 
-  // Supabase types nested embeds conservatively - the join always returns
-  // exactly one topic per question, but the generated type allows for an
-  // array or null. Cast is used here.
+  // Supabase's generated types allow this joined topic to be an array or
+  // null, even though it's always exactly one topic per question here.
+  // The cast below just tells TypeScript the real shape.
   const topic = best.question.topics as unknown as { id: string; name: string; module_id: string } | null;
 
   return {

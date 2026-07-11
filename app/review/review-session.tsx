@@ -21,7 +21,7 @@ export default function ReviewSession({
   if (!current) {
     return (
       <div className="mt-8 rounded-lg border border-line bg-card p-8 text-center">
-        <p className="text-lg font-medium text-ink">Session complete — {done} reviewed</p>
+        <p className="text-lg font-medium text-ink">Session complete - {done} reviewed</p>
         <a href="/dashboard" className="mt-4 inline-block text-sm text-brand">
           Back to dashboard
         </a>

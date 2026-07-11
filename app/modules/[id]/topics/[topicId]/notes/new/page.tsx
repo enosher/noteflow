@@ -8,7 +8,7 @@ export default async function NewNotePage({
 }) {
   const { topicId } = await params;
 
-  // createNote(topicId, subtopicId, formData) — subtopicId is null because
+  // createNote(topicId, subtopicId, formData) - subtopicId is null since
   // this form creates a topic-level note.
   const createThisNote = createNote.bind(null, topicId, null);
 

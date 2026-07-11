@@ -1,3 +1,4 @@
+// The form for editing a module's code, name, and description.
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateModule } from "./actions";

@@ -36,11 +36,9 @@ export async function createQuestion(topicId: string, formData: FormData) {
 
     if (options.length < 2) throw new Error("MCQ questions need at least 2 options.");
 
-    // Answer-matching enforcement: for MCQ, "answer" isn't a free-text field —
-    // it must be one of the literal option strings, since submitAnswer() later
-    // does a straight string comparison against this value. Catching a mismatch
-    // here (at creation) is much cheaper than debugging "every MCQ marked wrong"
-    // during the quiz flow.
+    // For MCQ, answer must be one of the literal option strings, since
+    // submitAnswer() does a straight string comparison. Catching a mismatch
+    // here beats debugging "every MCQ marked wrong" mid-quiz.
     if (!options.includes(answer)) {
       throw new Error("The answer must match one of the options exactly.");
     }
@@ -61,8 +59,8 @@ export async function createQuestion(topicId: string, formData: FormData) {
 
   if (error) throw new Error(friendlyMessage(error));
 
-  // Need module_id to build the redirect path — questions don't carry it
-  // directly, so we look it up via the parent topic.
+  // Need module_id to build the redirect path - questions don't carry it
+  // directly, so it's looked up via the parent topic.
   const { data: topic } = await supabase
     .from("topics")
     .select("module_id")

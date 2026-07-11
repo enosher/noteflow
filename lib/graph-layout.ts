@@ -1,14 +1,12 @@
 import { topologicalLevels, type PrereqEdge } from "@/lib/prereq";
 
-// Force-directed layout for the concept graph, hand-rolled on purpose.
-// Pure geometry, no DOM or Supabase - every force is unit-testable, same
-// philosophy as prereq.ts. The one promise a generic library (d3-force,
-// react-flow) won't make: each node's x is anchored to its topological
-// level, so the DAG always reads left-to-right; physics only negotiates y.
+// Hand-rolled layout for the concept graph: just positions and forces,
+// no DOM or Supabase, so it's easy to test on its own. Each node's x is
+// locked to its step in the prerequisite chain, so arrows point left to right.
 
 export type SimNode = {
   id: string;
-  level: number; // topological depth, fixed for the node's lifetime
+  level: number; // how many steps deep in the prerequisite chain, fixed for the node's lifetime
   x: number;
   y: number;
   vx: number;
@@ -16,14 +14,14 @@ export type SimNode = {
 };
 
 export type SimParams = {
-  columnWidth: number; // horizontal distance between topological levels
+  columnWidth: number; // horizontal distance between prerequisite steps
   rowGap: number; // initial vertical spacing when seeding
   linkDistance: number; // spring rest length for prerequisite edges
   linkStrength: number;
   repulsion: number; // pairwise push, scaled by 1/distance^2
   collideRadius: number; // hard minimum separation between node centers
   columnStrength: number; // pull back toward the level's x column
-  centerStrength: number; // gentle pull toward the vertical centroid
+  centerStrength: number; // gentle pull toward the average height of all nodes
   damping: number; // velocity retained per tick (0-1)
 };
 
@@ -39,8 +37,9 @@ export const DEFAULT_PARAMS: SimParams = {
   damping: 0.6,
 };
 
-// Seed each node at its topological column, stacked by insertion order.
-// Deterministic on purpose: reloads and tests get the same picture.
+// Places each node in its prerequisite-chain column, stacked in the
+// order they were given. Always produces the same layout, so reloads
+// and tests show the same picture every time.
 export function seedLayout(
   topicIds: string[],
   edges: PrereqEdge[],
@@ -64,10 +63,10 @@ export function seedLayout(
   });
 }
 
-// One physics tick. Mutates in place (cloning per frame is GC noise) and
-// returns max displacement so the caller can stop once settled. `alpha` is
-// annealing temperature - bold early, nudges late. `pinnedId` is the node
-// under the pointer: dragged, never pushed.
+// One step of the animation, changing nodes in place instead of copying
+// them (copying every frame would be wasteful). Returns the biggest move
+// made, so the caller can stop once things settle. `alpha` sets how
+// strong this step's push is; `pinnedId` is the node being dragged.
 export function stepSimulation(
   nodes: SimNode[],
   edges: PrereqEdge[],
@@ -77,7 +76,8 @@ export function stepSimulation(
 ): number {
   const byId = new Map(nodes.map((n) => [n.id, n]));
 
-  // Repulsion + collision in one symmetric O(n^2) pass - no net drift.
+  // Compares every pair of nodes and pushes them apart if they're too
+  // close, so nothing drifts off in one direction overall.
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
       const a = nodes[i];
@@ -86,7 +86,8 @@ export function stepSimulation(
       let dy = b.y - a.y;
       let d2 = dx * dx + dy * dy;
       if (d2 === 0) {
-        // Coincident nodes get a deterministic shove, not a random one.
+        // Nodes sitting on the exact same spot get nudged apart the
+        // same way every time, not a random direction.
         dy = j - i;
         d2 = dy * dy;
       }
@@ -135,7 +136,7 @@ export function stepSimulation(
     to.vy -= fy;
   }
 
-  // Column anchor + vertical centering, then integrate.
+  // Pull each node toward its column and the average height, then move it.
   const meanY =
     nodes.reduce((sum, n) => sum + n.y, 0) / Math.max(nodes.length, 1);
 
