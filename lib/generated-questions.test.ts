@@ -93,6 +93,32 @@ describe("isValidDraft", () => {
   it("rejects an mcq with a blank option", () => {
     expect(isValidDraft(mcq({ options: ["A) x", "  ", "C) y"] }))).toBe(false);
   });
+
+  it("boundary: an mcq with exactly 3 options is accepted (impl allows 2-4, not exactly 4)", () => {
+    expect(
+      isValidDraft(
+        mcq({
+          options: ["A) Loops forever", "B) Terminates without recursing", "C) Calls itself"],
+        })
+      )
+    ).toBe(true);
+  });
+
+  it("accepts an mcq with more than 4 options — no upper bound is enforced", () => {
+    expect(
+      isValidDraft(
+        mcq({
+          options: [
+            "A) Loops forever",
+            "B) Terminates without recursing",
+            "C) Calls itself",
+            "D) None",
+            "E) Also none",
+          ],
+        })
+      )
+    ).toBe(true);
+  });
 });
 
 describe("parseGenerated", () => {
@@ -158,6 +184,30 @@ describe("isDuplicate (shared-word overlap)", () => {
     // "a b c d" vs "a b x y" share 2 of 6 total words, about 33% overlap
     expect(isDuplicate("a b c d", ["a b x y"], 0.3)).toBe(true);
     expect(isDuplicate("a b c d", ["a b x y"], 0.5)).toBe(false);
+  });
+
+  // The two tests above establish the threshold is honored in general;
+  // these two pin the *default* threshold (0.8) itself, since nothing
+  // else in the suite lands exactly on that line.
+  it("boundary: a pair at exactly the default 0.8 ratio is flagged duplicate", () => {
+    // existing has 4 tokens; candidate is existing + 1 new token.
+    // shared = 4, union = 4 existing + 1 new = 5 -> 4/5 = 0.80 exactly.
+    // isDuplicate uses >=, so exactly 0.80 must count as a duplicate.
+    expect(
+      isDuplicate("alpha bravo charlie delta echo", ["alpha bravo charlie delta"])
+    ).toBe(true);
+  });
+
+  it("boundary: a pair just under the default 0.8 ratio is not flagged", () => {
+    // Both sentences have 8 tokens and share 7; each has exactly one
+    // token the other lacks. shared = 7, union = 7 + 1 + 1 = 9 ->
+    // 7/9 = 0.7778, just below the 0.80 cutoff.
+    expect(
+      isDuplicate(
+        "alpha bravo charlie delta echo foxtrot golf india",
+        ["alpha bravo charlie delta echo foxtrot golf hotel"]
+      )
+    ).toBe(false);
   });
 });
 
