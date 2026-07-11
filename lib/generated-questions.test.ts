@@ -10,6 +10,9 @@ import {
   buildGenerationPrompt,
   GENERATION_RESPONSE_SCHEMA,
   NOT_CONFIGURED_MESSAGE,
+  DAILY_GENERATION_CAP,
+  USAGE_CAPPED_MESSAGE,
+  isOverDailyCap,
   type GeneratedQuestion,
 } from "./generated-questions";
 
@@ -261,6 +264,28 @@ describe("GENERATION_RESPONSE_SCHEMA", () => {
     expect(GENERATION_RESPONSE_SCHEMA.items.required).toEqual(
       expect.arrayContaining(["prompt", "answer", "question_type", "difficulty"])
     );
+  });
+});
+
+describe("isOverDailyCap", () => {
+  it("allows calls under the cap", () => {
+    expect(isOverDailyCap(0)).toBe(false);
+    expect(isOverDailyCap(DAILY_GENERATION_CAP - 1)).toBe(false);
+  });
+
+  it("boundary: exactly at the cap counts as over it", () => {
+    // >= on purpose -- the count passed in is calls already made, so
+    // the Nth call being allowed through would make N+1, one over.
+    expect(isOverDailyCap(DAILY_GENERATION_CAP)).toBe(true);
+  });
+
+  it("stays capped for anything above it too", () => {
+    expect(isOverDailyCap(DAILY_GENERATION_CAP + 50)).toBe(true);
+  });
+
+  it("points the usage-capped message at the milestone video, distinct from a plain rate-limit message", () => {
+    expect(USAGE_CAPPED_MESSAGE).toMatch(/milestone video/i);
+    expect(USAGE_CAPPED_MESSAGE).not.toMatch(/wait a minute/i);
   });
 });
 

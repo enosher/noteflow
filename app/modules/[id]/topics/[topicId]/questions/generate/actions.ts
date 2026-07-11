@@ -26,10 +26,12 @@ import {
   clampCount,
   dedupe,
   GENERATION_RESPONSE_SCHEMA,
+  isOverDailyCap,
   isValidDraft,
   normalizeTypes,
   NOT_CONFIGURED_MESSAGE,
   parseGenerated,
+  USAGE_CAPPED_MESSAGE,
   type GeneratedQuestion,
 } from "@/lib/generated-questions";
 
@@ -134,6 +136,32 @@ export async function generateQuestionDrafts(
 
   const n = clampCount(count);
   const types = normalizeTypes(requestedTypes);
+
+  // Checked right before the Gemini call, not earlier -- no point
+  // spending this query on a request that was always going to bail out
+  // on "no notes" anyway. One GEMINI_API_KEY is shared across every
+  // account on this deployment, so the cap is app-wide, not per-user.
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: callsToday, error: capErr } = await supabase
+    .from("ai_generation_log")
+    .select("id", { count: "exact", head: true })
+    .gte("called_at", since);
+  if (capErr) {
+    // Fails OPEN: if the cap check itself is broken, blocking every
+    // generation because of it would be a worse outcome than
+    // occasionally letting the real cap slip by a call or two.
+    console.error("ai_generation_log count check failed", capErr);
+  } else if (isOverDailyCap(callsToday ?? 0)) {
+    return { ok: false, message: USAGE_CAPPED_MESSAGE };
+  }
+
+  // Logged as an attempt, not a success -- even a call that Gemini
+  // itself rejects (429/5xx) still hit the shared key, and undercounting
+  // here would defeat the point of the cap. Errors are swallowed (not
+  // returned to the user) since a logging failure shouldn't block
+  // generation the cap check just approved.
+  const { error: logErr } = await supabase.from("ai_generation_log").insert({});
+  if (logErr) console.error("ai_generation_log insert failed", logErr);
 
   const { systemPrompt, userPrompt } = buildGenerationPrompt({
     topicName: topic.name,

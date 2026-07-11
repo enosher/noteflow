@@ -197,6 +197,8 @@ Each row records work done on the project. Log every hour, including self-learni
 | 2026-07-11 | Verified: `npm test` (89/89 passing, 5 files), `npm run lint` (clean), `npx tsc --noEmit` (clean); `npm run build` not runnable in sandbox (SWC binary unavailable) - needs a local build check before commit | |
 | 2026-07-11 | Fixed thrown-Error redaction bug: Next.js blanks the message of any Error thrown from a Server Action in production, silently swallowing every friendly message in the AI-gen flow; `generateQuestionDrafts`/`saveGeneratedQuestions` now return `{ ok, message }` for expected failures instead of throwing | |
 | 2026-07-11 | `gemini-2.5-flash` started 404ing for new API keys/projects on Google's side (Jul 9 2026, ahead of its listed Oct 16 2026 shutdown - confirmed via Google AI Developers Forum); switched `MODEL` to `gemini-3.5-flash`, Google's listed replacement | |
+| 2026-07-11 | Fixed Gemini thinking-token truncation: gemini-3.5-flash's default `thinkingLevel: "medium"` was drawing from the same `maxOutputTokens` budget as the JSON answer, truncating it; set `thinkingLevel: "minimal"` and raised the budget to 4096; added raw-response logging on parse failure | |
+| 2026-07-11 | Added `ai_generation_log` table + RLS (`docs/m3_schema.sql`) and a shared daily cap (`DAILY_GENERATION_CAP`, `isOverDailyCap` in `lib/generated-questions.ts`) on Gemini calls, since one `GEMINI_API_KEY` is shared across every tester on this deployment; capped requests get a message pointing at the milestone video instead of calling Gemini; wrote 5 more Vitest tests | |
 | **Total**  |                                                                                                           | **39.0** |
 
 ---
