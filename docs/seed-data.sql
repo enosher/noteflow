@@ -25,7 +25,7 @@ select id, 'Method Overriding', 0 from t1
 union all
 select id, 'Abstract Classes', 1 from t1;
 
--- Module 2: MA1521 (no topics/subtopics — keeps the list view non-trivial)
+-- Module 2: MA1521 (no topics/subtopics - keeps the list view non-trivial)
 insert into modules (user_id, code, name, description)
 values (
   '9f053e47-78b2-4719-a235-1974022c15b3',

@@ -1,14 +1,13 @@
-// app/modules/page.tsx not to be confused with app/page.tsx! This is the page that shows the list of modules, at the /modules route.
+// The /modules list route - not to be confused with app/page.tsx.
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { loadSampleData } from "./sample-data-actions";
 
 /**
- * ModulesPage — lists all modules belonging to the signed-in user.
+ * ModulesPage - lists all modules belonging to the signed-in user.
  *
- * Server component: fetches data at request time, no client JS needed.
- * RLS on the `modules` table scopes the query to auth.uid() automatically —
- * no manual .eq("user_id", ...) filter required.
+ * Server component, no client JS needed. RLS on `modules` scopes the
+ * query to auth.uid() automatically, so no manual user_id filter.
  */
 export default async function ModulesPage() {
   const supabase = await createClient();
@@ -46,7 +45,7 @@ export default async function ModulesPage() {
         </Link>
       </div>
 
-      {/* Empty state — shown on first login before any modules exist */}
+      {/* Empty state - shown on first login before any modules exist */}
       {modules.length === 0 ? (
         <div className="rounded-md border border-dashed border-gray-300 p-8 text-center">
           <p className="text-gray-500 text-sm">No modules yet.</p>
@@ -72,7 +71,7 @@ export default async function ModulesPage() {
           </form>
         </div>
       ) : (
-        // Module list — each row links to the module detail page
+        // Module list - each row links to the module detail page
         <ul className="space-y-2">
           {modules.map((m) => (
             <li key={m.id}>

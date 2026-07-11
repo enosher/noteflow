@@ -1,3 +1,4 @@
+// The top bar shown on every page once a user is logged in.
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";

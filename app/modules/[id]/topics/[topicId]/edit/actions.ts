@@ -42,9 +42,9 @@ export async function updateTopic(topicId: string, formData: FormData) {
 export async function deleteTopic(topicId: string) {
   const supabase = await createClient();
 
-  // Fetch module_id BEFORE deleting — once the row is gone, there's no
-  // way to look up where it used to live, and we still want to redirect
-  // back to the right module rather than a generic /modules list.
+  // Fetch module_id before deleting - once the row is gone there's no way
+  // to look up where it lived, and the redirect should land on the real
+  // module, not a generic /modules list.
   const { data: topic } = await supabase
     .from("topics")
     .select("module_id")

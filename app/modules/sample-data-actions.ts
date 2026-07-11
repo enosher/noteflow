@@ -1,11 +1,8 @@
 'use server';
 
-// Self-service half of "seed all accounts, current and new". Lets any
-// signed-in user pull in the same sample dataset the backfill script
-// uses, so a fresh signup (an evaluator who skips the demo login, or
-// a real student poking around) is never stuck at a blank Modules
-// page. Runs under the caller's own RLS-scoped session — it can only
-// ever write into the account that called it.
+// Lets any signed-in user pull in the same sample data the backfill
+// script uses, so a fresh signup never lands on a blank Modules page.
+// Runs under the caller's own RLS session - it can only write to itself.
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';

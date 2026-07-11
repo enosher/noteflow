@@ -2,12 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getRecommendedQuestion } from "@/lib/recommender";
 import Link from "next/link";
 
-// This is a scaffold, not the polished dashboard card -- it's the
-// reference implementation for what getRecommendedQuestion returns, kept
-// as its own route (rather than inside app/dashboard/page.tsx) so it
-// doesn't collide with Spencer's in-progress dashboard work. Once the
-// field names below are confirmed, this becomes the spec for the real
-// dashboard UI; it can stay around afterwards as a debug view either way.
+// Scaffold, not the polished card: reference implementation for
+// getRecommendedQuestion's output, on its own route so it won't collide
+// with Spencer's in-progress dashboard work. Doubles as a debug view later.
 export default async function RecommendationDebugPage() {
   const supabase = await createClient();
   const recommendation = await getRecommendedQuestion(supabase);
@@ -19,11 +16,11 @@ export default async function RecommendationDebugPage() {
       </Link>
       <h1 className="text-2xl font-bold mt-2 mb-2">Recommended next question</h1>
       <p className="text-gray-600 text-sm mb-6">
-        Debug view — shows the scoring breakdown behind the pick, not just the result.
+        Debug view - shows the scoring breakdown behind the pick, not just the result.
       </p>
 
       {!recommendation ? (
-        <p className="text-gray-600">No recommendation yet — add some questions and take a quiz first.</p>
+        <p className="text-gray-600">No recommendation yet - add some questions and take a quiz first.</p>
       ) : (
         <>
           <div className="rounded-md border p-4 mb-6">

@@ -58,7 +58,7 @@ export async function getDueReviews(): Promise<DueReview[]> {
   });
 }
 
-// Called after every graded answer — quiz flow and the review queue.
+// Called after every graded answer - quiz flow and the review queue.
 // The first time we see a (user, question) pair, the schedule starts from INITIAL_STATE.
 export async function updateReviewSchedule(
   questionId: string,

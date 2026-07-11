@@ -1,22 +1,15 @@
 // lib/seed-data.ts
 //
-// Declarative sample dataset used to seed rich demo content into ANY
-// account. The M2 complaint was "empty first five minutes" — the fix
-// isn't one shared login, it's making a populated account one click
-// (or one backfill run) away for everyone. This dataset backs both
-// scripts/seed-all.ts (backfills every existing account) and the
-// self-service "Load sample data" action in
-// app/modules/sample-data-actions.ts that any user can trigger.
+// The sample data used to fill a new account so it isn't empty. Used by
+// both scripts/seed-all.ts and the "Load sample data" button.
 //
 // Two modules on purpose: CS2030S reads as a CS student's account,
-// GEA1000 (NUS's common quantitative-reasoning module) reads as
-// anyone else's — an evaluator or non-CS student shouldn't have to
-// squint at a computing module to believe the app applies to them.
+// GEA1000 (NUS's common quant-reasoning module) reads as anyone else's,
+// so the app doesn't look computing-only to a non-CS evaluator.
 //
-// Idempotency contract: seedAccountData() only inserts modules whose
-// `code` the target account doesn't already have yet. Re-running it,
-// or running it against an account with real data, never duplicates
-// or deletes anything — it just leaves existing codes alone.
+// Safe to run more than once: seedAccountData() only adds module codes
+// the account doesn't already have, so re-running it never duplicates
+// or deletes anything.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/types/database';
@@ -78,7 +71,7 @@ export const SEED_MODULES: SeedModule[] = [
         topic: 'Recursion',
         title: 'Recursion patterns',
         content:
-          '# Recursion\n\nEvery recursive method needs:\n\n1. **Base case** — terminates without recursing\n2. **Recursive case** — reduces towards the base case\n\nStack depth is bounded by JVM stack size; prefer tail-recursive shapes or iteration for deep inputs.',
+          '# Recursion\n\nEvery recursive method needs:\n\n1. **Base case** - terminates without recursing\n2. **Recursive case** - reduces towards the base case\n\nStack depth is bounded by JVM stack size; prefer tail-recursive shapes or iteration for deep inputs.',
       },
     ],
     questions: [
@@ -128,7 +121,7 @@ export const SEED_MODULES: SeedModule[] = [
         topic: 'Descriptive Statistics',
         title: 'Mean, median, mode',
         content:
-          '# Descriptive statistics\n\n- **Mean** — sensitive to outliers\n- **Median** — the middle value; robust to outliers\n- **Mode** — most frequent value; only measure that works on categorical data\n\nStandard deviation uses every point, so it is a better spread measure than range.',
+          '# Descriptive statistics\n\n- **Mean** - sensitive to outliers\n- **Median** - the middle value; robust to outliers\n- **Mode** - most frequent value; only measure that works on categorical data\n\nStandard deviation uses every point, so it is a better spread measure than range.',
       },
       {
         topic: 'Data Visualization Fallacies',
@@ -176,16 +169,12 @@ export type SeedResult = {
   skippedCodes: string[];
 };
 
-// Seeds SEED_MODULES into one account. Works with either an
-// authenticated user client (self-service path, RLS-scoped to that
-// user) or a service-role client (backfill script) — every row
-// carries the target userId explicitly either way, so the insert
-// shape doesn't change based on caller.
+// Seeds SEED_MODULES into one account. Works with an authenticated user
+// client or a service-role client - every row carries userId explicitly,
+// so the insert shape doesn't change based on caller.
 //
-// Never deletes anything. A module code the account already has is
-// left completely alone — that's what makes it safe to run against
-// real, non-demo accounts and to re-run repeatedly without asking
-// "did I already do this?" first.
+// Never deletes anything. A code the account already has is left alone,
+// which is what makes it safe to run against real accounts, repeatedly.
 export async function seedAccountData(
   db: Db,
   userId: string

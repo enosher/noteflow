@@ -25,12 +25,10 @@ const mcq = (overrides: Partial<Parameters<typeof isValidDraft>[0]> = {}) => ({
   ...overrides,
 });
 
-// dedupe()/GeneratedQuestion want question_type narrowed to the literal
-// union; isValidDraft() intentionally accepts the wider `string` (it has
-// to, since raw model output isn't typed at all). mcq() stays loose to
-// support the invalid-question_type rejection tests above -- this cast
-// is just for the handful of call sites that pass mcq()'s output to an
-// API that wants the narrowed type.
+// dedupe()/GeneratedQuestion expect question_type to be exactly "mcq" or
+// "short_answer", but mcq() keeps it as a plain string so it can also
+// test rejecting a bad question_type. This cast fixes the type just
+// for the few call sites that need the exact match.
 const asDraft = (d: ReturnType<typeof mcq>): GeneratedQuestion => d as GeneratedQuestion;
 
 describe("isValidDraft", () => {
@@ -132,7 +130,7 @@ describe("parseGenerated", () => {
   });
 });
 
-describe("isDuplicate (Jaccard token overlap)", () => {
+describe("isDuplicate (shared-word overlap)", () => {
   it("flags an exact duplicate", () => {
     expect(isDuplicate("What is recursion?", ["What is recursion?"])).toBe(true);
   });
@@ -144,7 +142,7 @@ describe("isDuplicate (Jaccard token overlap)", () => {
   });
 
   it("does not flag a rephrasing that falls below the threshold", () => {
-    // Shares 6 of 8 tokens (in/of differ) -> Jaccard 0.75, under the 0.8 bar
+    // Shares 6 of 8 words (in/of differ), 75% overlap, under the 80% cutoff
     expect(
       isDuplicate("What is the base case in recursion?", ["What is the base case of recursion?"])
     ).toBe(false);
@@ -157,7 +155,7 @@ describe("isDuplicate (Jaccard token overlap)", () => {
   });
 
   it("boundary: respects a custom threshold", () => {
-    // "a b c d" vs "a b x y": 2/6 intersection/union ≈ 0.33
+    // "a b c d" vs "a b x y" share 2 of 6 total words, about 33% overlap
     expect(isDuplicate("a b c d", ["a b x y"], 0.3)).toBe(true);
     expect(isDuplicate("a b c d", ["a b x y"], 0.5)).toBe(false);
   });
@@ -274,8 +272,8 @@ describe("isOverDailyCap", () => {
   });
 
   it("boundary: exactly at the cap counts as over it", () => {
-    // >= on purpose -- the count passed in is calls already made, so
-    // the Nth call being allowed through would make N+1, one over.
+    // >= on purpose - the count passed in is calls already made, so
+    // letting the Nth through would make N+1, one over the line.
     expect(isOverDailyCap(DAILY_GENERATION_CAP)).toBe(true);
   });
 
@@ -293,8 +291,8 @@ describe("classifyGeminiError", () => {
   it("gives the not-configured message for 401 and 403, not a 'try again' message", () => {
     expect(classifyGeminiError(401)).toBe(NOT_CONFIGURED_MESSAGE);
     expect(classifyGeminiError(403)).toBe(NOT_CONFIGURED_MESSAGE);
-    // Retrying can never fix a bad/missing key -- asserting this stays
-    // distinct from the retryable-failure wording is the whole point.
+    // Retrying can never fix a bad/missing key - this assertion is the
+    // whole point: it must stay distinct from retryable-failure wording.
     expect(classifyGeminiError(401)).not.toMatch(/try again/i);
   });
 

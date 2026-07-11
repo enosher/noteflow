@@ -21,7 +21,7 @@ export default async function QuizPage({
       <h1 className="text-2xl font-bold mb-6">Quiz</h1>
 
       {!questions || questions.length === 0 ? (
-        <p className="text-gray-600">No questions yet for this topic — add some first.</p>
+        <p className="text-gray-600">No questions yet for this topic - add some first.</p>
       ) : (
         <QuizRunner
           // `options` comes back from Supabase typed as `Json | null`, but

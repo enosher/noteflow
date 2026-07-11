@@ -1,5 +1,6 @@
 "use client";
 
+// A form submit button that shows a "pending" label while it's saving.
 import { useFormStatus } from "react-dom";
 
 export function SubmitButton({

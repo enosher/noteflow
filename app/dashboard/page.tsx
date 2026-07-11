@@ -29,14 +29,14 @@ export default async function DashboardPage() {
         <p className="text-gray-600 mt-1">Welcome, {user.email}</p>
       </div>
 
-      {/* Weak topics — the "Track" feature's headline output */}
+      {/* Weak topics - the "Track" feature's headline output */}
       <section className="mb-8">
         <h2 className="text-lg font-semibold mb-3">Weak topics</h2>
         {weakTopics.length === 0 ? (
           <p className="text-gray-500 text-sm">
             {topicStats.length === 0
-              ? "No quiz attempts yet — take a quiz to see your weak topics here."
-              : "No weak topics flagged yet — keep going!"}
+              ? "No quiz attempts yet - take a quiz to see your weak topics here."
+              : "No weak topics flagged yet - keep going!"}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Accuracy by topic — full table, not just the weak ones */}
+      {/* Accuracy by topic - full table, not just the weak ones */}
       <section className="mb-8">
         <h2 className="text-lg font-semibold mb-3">Accuracy by topic</h2>
         {topicStats.length === 0 ? (
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Recommendation — the "Adapt" feature */}
+      {/* Recommendation - the "Adapt" feature */}
       <section>
         <h2 className="text-lg font-semibold mb-3">Recommended next</h2>
         {recommendation ? (

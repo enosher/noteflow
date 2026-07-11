@@ -1,17 +1,11 @@
 // scripts/seed-all.ts
 //
-// Backfills SEED_MODULES (lib/seed-data.ts) into every existing
-// account. Run this once now to populate current test/dev accounts —
-// any account created AFTER this runs gets the same data via the
-// "Load sample data" button on an empty Modules page
-// (app/modules/sample-data-actions.ts), so this script never needs a
-// cron job or a repeat run against the same account.
+// Backfills SEED_MODULES into every existing account, one-time. Accounts
+// created after this runs get the same data via the "Load sample data"
+// button (app/modules/sample-data-actions.ts) instead.
 //
-// Uses the service-role key to bypass RLS and read every profile.
-// Safe to re-run: seedAccountData() skips module codes an account
-// already has, so accounts that were backfilled last time (or that
-// have grown their own real CS2030S/GEA1000 module — vanishingly
-// unlikely, but the guard costs nothing) are left untouched.
+// Uses the service-role key to bypass RLS. Safe to re-run: it skips
+// module codes an account already has, so nothing gets duplicated.
 //
 // Run with:
 //   npx tsx scripts/seed-all.ts

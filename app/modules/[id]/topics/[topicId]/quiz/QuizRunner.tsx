@@ -35,7 +35,7 @@ export function QuizRunner({
   const current = questions[index];
   const isLastQuestion = index === questions.length - 1;
 
-  // Starts the timer for a qns and clears any state left over from the previous qns.
+  // Starts the timer for a question and clears any leftover state from the last one.
   function resetForQuestion() {
     setStartedAt(Date.now());
     setAnswer("");

@@ -52,7 +52,7 @@ describe("stepSimulation", () => {
   });
 
   it("keeps a prerequisite strictly left of its dependent after settling", () => {
-    // The layout's one hard promise: the DAG reads left-to-right.
+    // The layout's one hard promise: the graph reads left-to-right.
     const nodes = settle(
       seedLayout(["A", "B", "C"], [edge("B", "A"), edge("C", "B")]),
       [edge("B", "A"), edge("C", "B")]

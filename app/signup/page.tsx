@@ -1,5 +1,6 @@
 'use client'
 
+// The sign-up page: a simple form for creating a new account.
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'

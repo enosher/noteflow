@@ -1,3 +1,5 @@
+// The shared page wrapper: sets up fonts, dark/light mode, and the nav bar
+// that shows on every page.
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";

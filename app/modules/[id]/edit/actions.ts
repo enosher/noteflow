@@ -1,5 +1,6 @@
 "use server";
 
+// Edit or delete a module (a course, like "CS2030S").
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";

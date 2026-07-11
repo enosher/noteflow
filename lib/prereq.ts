@@ -1,8 +1,8 @@
 import { WEAK_TOPIC_THRESHOLD, WEAK_TOPIC_MIN_ATTEMPTS } from "@/lib/weak-topics";
 
-// Graph reasoning for the concept map. Kept pure and Supabase-free, same
-// reason as sm2.ts and recommender.ts: cycles and gating are logic bugs,
-// and logic bugs belong in a millisecond-fast unit test, not a live DB.
+// The logic behind the concept map. Kept simple and free of any database
+// calls, same as sm2.ts and recommender.ts, so bugs like a broken loop
+// or blocking rule show up in a fast test instead of a live database.
 
 export type PrereqEdge = {
   topic_id: string;
@@ -15,10 +15,9 @@ export type TopicMastery = {
   attempts: number;
 };
 
-// Would adding this edge create a cycle? BFS from the proposed
-// prerequisite's own prerequisites back towards topicId. Checked at write
-// time rather than tolerated at read time, since a cyclic prerequisite
-// graph is meaningless. Reject early with a clear message.
+// Would adding this edge create a loop? Walks backward through the
+// proposed prerequisite's own prerequisites, checking if it leads back
+// to topicId. Checked before saving, since a looping chain makes no sense.
 export function wouldCreateCycle(
   edges: PrereqEdge[],
   topicId: string,
@@ -46,11 +45,9 @@ export function wouldCreateCycle(
   return false;
 }
 
-// The gate the recommender reads. A topic is "blocked" when a direct
-// prerequisite is weak, using the same weak definition as everywhere else
-// in the app (imported, not redefined). Unattempted prerequisites never block:
-// punishing users for not having started yet would make a new module
-// feel broken from the first click.
+// The gate the recommender reads: a topic is "blocked" when a direct
+// prerequisite is weak (same definition used everywhere else). Unattempted
+// prerequisites never block, so a new module doesn't feel broken on click one.
 export function blockedTopics(
   edges: PrereqEdge[],
   mastery: TopicMastery[]
@@ -70,10 +67,9 @@ export function blockedTopics(
   return blocked;
 }
 
-// Layers topics into levels for the graph layout: a topic with no
-// prerequisites sits at level 0; everything else sits one level past the
-// deepest of its own prerequisites. `seen` guards a malformed edge set
-// (shouldn't happen, since writes are cycle-checked) from infinite recursion.
+// Sorts topics into levels for the graph layout: no prerequisites means
+// level 0, otherwise one level deeper than its deepest prerequisite.
+// `seen` stops this from looping forever if the edges are ever broken.
 export function topologicalLevels(
   topicIds: string[],
   edges: PrereqEdge[]

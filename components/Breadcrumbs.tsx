@@ -1,3 +1,4 @@
+// Shows the "Modules / Topic" trail of links at the top of a page.
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 

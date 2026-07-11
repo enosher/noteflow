@@ -89,7 +89,7 @@ describe("getScoreBreakdown", () => {
     userAvgDifficulty: 2,
   };
 
-  it("total always matches scoreQuestion for the same input -- the debug view can never show a number that disagrees with the real score", () => {
+  it("total always matches scoreQuestion for the same input - the debug view can never show a number that disagrees with the real score", () => {
     expect(getScoreBreakdown(input).total).toBeCloseTo(scoreQuestion(input), 10);
   });
 

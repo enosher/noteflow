@@ -1,3 +1,5 @@
+// Sends visitors to the right page based on whether they're logged in
+// (e.g. bounces logged-out users away from /dashboard).
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 

@@ -1,20 +1,12 @@
 "use server";
 
-// Two-phase flow, deliberately: generateQuestionDrafts() never writes to
-// the database, and saveGeneratedQuestions() never talks to Gemini.
-// Splitting them is what makes "review before save" possible at all --
-// a single do-everything action would have nowhere to pause for the
-// human-in-the-loop step.
+// Two-phase on purpose: generateQuestionDrafts() never writes to the
+// database, saveGeneratedQuestions() never talks to Gemini. That split
+// is what makes "review before save" possible at all.
 //
-// Expected failures are RETURNED, not thrown. Next.js redacts the
-// message of any thrown Error crossing a Server Action boundary in
-// production builds -- the client only ever sees a generic "omitted in
-// production" string, which silently defeats every friendly message
-// below (rate limit, not-configured, no notes, etc.). Returning a
-// { ok: false, message } result instead sidesteps that redaction
-// entirely, since it's ordinary serialized data, not an Error object.
-// redirect() is the one exception -- Next.js treats it as a distinct
-// internal signal, unaffected by this redaction.
+// Expected failures are returned, not thrown, since Next.js hides the
+// real text of thrown errors coming from a Server Action in production.
+// A plain { ok: false, message } object is just data, so it's unaffected.
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -35,18 +27,16 @@ import {
   type GeneratedQuestion,
 } from "@/lib/generated-questions";
 
-// gemini-2.5-flash started 404ing for new API keys/projects on Jul 9 2026
-// (Google's own deprecations page still lists it as valid until Oct 16
-// 2026, but new keys got cut off early -- 
-// see https://discuss.ai.google.dev/t/gemini-2-5-flash-and-gemini-2-5-flash-lite-returning-404-no-longer-available-today-july-9-contradicts-oct-16-2026-shutdown-date/174267).
-// gemini-3.5-flash is Google's own listed replacement and the current default flash model, still on the free tier.
+// gemini-2.5-flash started 404ing for new API keys on Jul 9 2026, ahead
+// of Google's own Oct 16 2026 shutdown date (see the forum thread:
+// https://discuss.ai.google.dev/t/gemini-2-5-flash-and-gemini-2-5-flash-lite-returning-404-no-longer-available-today-july-9-contradicts-oct-16-2026-shutdown-date/174267).
+// gemini-3.5-flash is Google's listed replacement, still free-tier.
 const MODEL = "gemini-3.5-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
-// Bounds the notes blob regardless of how much a topic has accumulated --
-// a topic with 40 subtopic notes shouldn't turn one button click into a
-// multi-thousand-token request. Cut, not summarized: summarizing would
-// need its own model call, defeating the point of keeping this cheap.
+// Limits how much note text gets sent, so a topic with 40 subtopic notes
+// can't turn one click into a huge request. The text is just cut short,
+// not summarized - summarizing would need its own model call.
 const MAX_NOTES_CHARS = 12000;
 
 export type GenerateResult =
@@ -58,12 +48,9 @@ export async function generateQuestionDrafts(
   count: number,
   requestedTypes: string[]
 ): Promise<GenerateResult> {
-  // Checked first, before any DB round trip -- a missing key means this
-  // deployment can never generate anything no matter what's in the
-  // topic's notes, so there's no point spending queries to find that
-  // out. This is the single most likely real failure mode on a fresh
-  // deployment (env var never added to Vercel), and the one where
-  // "try again" is actively unhelpful advice.
+  // Checked first: a missing key means this deployment can't generate
+  // anything regardless of the notes. Usually a forgotten Vercel env
+  // var, where "try again" would be bad advice.
   if (!process.env.GEMINI_API_KEY) {
     return { ok: false, message: NOT_CONFIGURED_MESSAGE };
   }
@@ -75,14 +62,13 @@ export async function generateQuestionDrafts(
     .select("name")
     .eq("id", topicId)
     .single();
-  // Genuinely unexpected (the page itself already 404s on a missing
-  // topic) rather than a friendly guidance case, so this one throws
-  // and falls to the generic error boundary rather than the review UI.
+  // This shouldn't really happen, since the page itself already shows a
+  // 404 for a missing topic. So this just throws and shows the app's
+  // generic error page instead of a friendly message.
   if (topicErr || !topic) throw new Error("Topic not found.");
 
-  // Topic-level notes and subtopic notes are two separate queries rather
-  // than one embed -- same "testable flat queries over a clever join"
-  // trade-off lib/weak-topics.ts documents for getTopicAccuracy.
+  // Two separate queries instead of one combined query, same choice
+  // lib/weak-topics.ts makes for getTopicAccuracy: simpler to test.
   const { data: topicNotes, error: notesErr } = await supabase
     .from("notes")
     .select("title, content")
@@ -106,10 +92,9 @@ export async function generateQuestionDrafts(
     subtopicNotes = data ?? [];
   }
 
-  // File-only notes (content null) can't be read here -- there's no text
-  // extraction step for arbitrary uploads in this feature -- so they're
-  // skipped rather than surfaced as an error. A topic that's ALL file
-  // notes falls through to the "no usable content" check below.
+  // File-only notes (content null) get skipped, not errored - there's no
+  // text-extraction step for uploads in this feature. A topic that's all
+  // files falls through to the "no usable content" check below.
   const usableNotes = [...(topicNotes ?? []), ...subtopicNotes].filter(
     (n) => n.content && n.content.trim().length > 0
   );
@@ -118,7 +103,7 @@ export async function generateQuestionDrafts(
     return {
       ok: false,
       message:
-        "This topic has no usable note content yet — add some notes (or notes with text, not just file attachments) before generating questions.",
+        "This topic has no usable note content yet - add some notes (or notes with text, not just file attachments) before generating questions.",
     };
   }
 
@@ -137,29 +122,27 @@ export async function generateQuestionDrafts(
   const n = clampCount(count);
   const types = normalizeTypes(requestedTypes);
 
-  // Checked right before the Gemini call, not earlier -- no point
-  // spending this query on a request that was always going to bail out
-  // on "no notes" anyway. One GEMINI_API_KEY is shared across every
-  // account on this deployment, so the cap is app-wide, not per-user.
+  // Checked right before the Gemini call, not earlier - no point spending
+  // this query on a request that was always going to bail on "no notes."
+  // One shared GEMINI_API_KEY means the cap is app-wide, not per-user.
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count: callsToday, error: capErr } = await supabase
     .from("ai_generation_log")
     .select("id", { count: "exact", head: true })
     .gte("called_at", since);
   if (capErr) {
-    // Fails OPEN: if the cap check itself is broken, blocking every
-    // generation because of it would be a worse outcome than
-    // occasionally letting the real cap slip by a call or two.
+    // If this check itself breaks, generation is still allowed to
+    // continue - blocking everyone because of a broken check is worse
+    // than occasionally letting the real cap slip by a call or two.
     console.error("ai_generation_log count check failed", capErr);
   } else if (isOverDailyCap(callsToday ?? 0)) {
     return { ok: false, message: USAGE_CAPPED_MESSAGE };
   }
 
-  // Logged as an attempt, not a success -- even a call that Gemini
-  // itself rejects (429/5xx) still hit the shared key, and undercounting
-  // here would defeat the point of the cap. Errors are swallowed (not
-  // returned to the user) since a logging failure shouldn't block
-  // generation the cap check just approved.
+  // Logged as an attempt, not a success - even a Gemini-rejected call
+  // (429/5xx) still hit the shared key, so undercounting would defeat
+  // the cap. Errors are swallowed since a logging failure shouldn't
+  // block generation the cap check already approved.
   const { error: logErr } = await supabase.from("ai_generation_log").insert({});
   if (logErr) console.error("ai_generation_log insert failed", logErr);
 
@@ -177,47 +160,38 @@ export async function generateQuestionDrafts(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Header, not a query param -- query strings are far more likely
-        // to end up in a log line somewhere between here and Google.
+        // Header, not a query param - query strings are far more likely
+        // to end up logged somewhere between here and Google.
         "x-goog-api-key": process.env.GEMINI_API_KEY ?? "",
       },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
         contents: [{ role: "user", parts: [{ text: userPrompt }] }],
         generationConfig: {
-          // gemini-3.5-flash defaults to thinkingLevel "medium", and
-          // thinking tokens draw from this SAME maxOutputTokens budget
-          // before the actual answer -- a well-documented gotcha (a
-          // low budget can leave nothing for the real JSON, truncating
-          // it mid-object and breaking parseGenerated's JSON.parse).
-          // This is a "simple task" by Google's own guidance (fact
-          // extraction, not multi-step reasoning), so thinking is
-          // minimized rather than left at the default. "minimal" isn't
-          // a hard guarantee of zero thinking, hence the generous
-          // token ceiling as a second line of defense.
+          // Default thinkingLevel "medium" draws from this same token
+          // budget and can truncate the real JSON mid-object. Minimized
+          // since this is fact extraction, not reasoning; the generous
+          // ceiling below is backup, since "minimal" isn't a hard zero.
           thinkingConfig: { thinkingLevel: "minimal" },
           maxOutputTokens: 4096,
-          // API-level JSON enforcement. responseSchema is a second,
-          // best-effort layer on top -- parseGenerated below still
-          // validates independently either way.
+          // responseSchema is a best-effort second layer on top of
+          // responseMimeType; parseGenerated below still validates too.
           responseMimeType: "application/json",
           responseSchema: GENERATION_RESPONSE_SCHEMA,
         },
       }),
     });
   } catch {
-    // fetch() itself throwing means the request never reached Google --
-    // DNS, offline, timeout. Distinct from a Gemini-side HTTP error.
-    // This call runs server-side (Vercel), not in the user's browser, so
-    // "check your connection" would be blaming the wrong machine.
-    return { ok: false, message: "Couldn't reach Gemini right now — try again in a moment." };
+    // fetch() throwing means the request never reached Google (DNS,
+    // offline, timeout) - distinct from a Gemini-side HTTP error. This
+    // runs server-side, so "check your connection" would blame the wrong machine.
+    return { ok: false, message: "Couldn't reach Gemini right now - try again in a moment." };
   }
 
   if (!res.ok) {
-    // Real status goes to the server log; the user gets the mapped,
-    // actionable line. A 429 here is the free-tier rate limit -- never
-    // suggest enabling billing, since that deletes the free tier rather
-    // than lifting the limit.
+    // Real status goes to the server log; the user gets a mapped,
+    // actionable line. A 429 is the free-tier rate limit - never suggest
+    // billing, since that removes the free tier rather than raising the limit.
     console.error("Gemini API error", res.status, await res.text().catch(() => ""));
     return { ok: false, message: classifyGeminiError(res.status) };
   }
@@ -229,28 +203,24 @@ export async function generateQuestionDrafts(
       .join("") ?? "";
 
   if (!text) {
-    // Empty candidates usually means the response was blocked (e.g. a
-    // safety filter) rather than malformed -- worth a distinct message
-    // since "try again" is actually good advice here, unlike for a
-    // structural JSON failure.
+    // An empty response usually means Gemini blocked it (a safety
+    // filter), not that it broke - "try again" is good advice here,
+    // unlike for a broken-JSON failure.
     return {
       ok: false,
-      message: "Gemini didn't return anything usable — try again or adjust your notes.",
+      message: "Gemini didn't return anything usable - try again or adjust your notes.",
     };
   }
 
-  // parseGenerated throws on structural failure (unparseable/non-array
-  // JSON) -- caught here and turned into the same result shape as every
-  // other expected failure above, rather than let it escape as a thrown
-  // Error and hit the redaction issue this whole file is built around.
+  // parseGenerated throws if the text isn't valid JSON or isn't a list.
+  // Caught here so it turns into the same result shape as every other
+  // expected failure above, instead of an error Next.js would hide.
   let parsed: GeneratedQuestion[];
   try {
     parsed = parseGenerated(text);
   } catch (e) {
-    // Logged raw (truncated) so a future parse failure is diagnosable
-    // from this one log line instead of another round of guessing --
-    // this is exactly the gap that made the thinking-token truncation
-    // bug slow to track down the first time.
+    // Logged raw (truncated) so the next parse failure is a one-line
+    // diagnosis - this exact gap slowed down the thinking-token bug.
     console.error("Gemini response failed to parse:", text.slice(0, 2000));
     return { ok: false, message: e instanceof Error ? e.message : "Couldn't read Gemini's response." };
   }
@@ -279,12 +249,9 @@ export async function saveGeneratedQuestions(
 ): Promise<SaveResult | void> {
   const supabase = await createClient();
 
-  // Re-validated here even though parseGenerated already checked each
-  // draft once -- the drafts arriving at this action came back through
-  // the review UI, where the user can edit any field (including turning
-  // a previously-valid MCQ answer into one that no longer matches its
-  // options). Trusting the earlier check would be exactly the "validate
-  // before save, not after" bug this feature was built to avoid.
+  // Re-validated even though parseGenerated already checked once - the
+  // review UI lets a user edit any field, including turning a valid MCQ
+  // answer into one that no longer matches its options.
   const valid = drafts
     .map((d) => ({
       ...d,
@@ -295,7 +262,7 @@ export async function saveGeneratedQuestions(
     .filter(isValidDraft);
 
   if (valid.length === 0) {
-    return { ok: false, message: "None of the selected questions passed validation — edit and try again." };
+    return { ok: false, message: "None of the selected questions passed validation - edit and try again." };
   }
 
   const { error } = await supabase.from("questions").insert(

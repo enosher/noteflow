@@ -5,15 +5,12 @@ import Link from "next/link";
 import { generateQuestionDrafts, saveGeneratedQuestions } from "./actions";
 import { isValidDraft, type GeneratedQuestion, type QuestionType } from "@/lib/generated-questions";
 
-// Local-only id so React can key/update/discard individual cards without
-// caring about the eventual DB id (there isn't one yet -- nothing here
-// is persisted until Save). Never sent to the server.
+// A temporary id so React can track and update each card before it's
+// saved and gets a real id. Never sent to the server.
 type Draft = GeneratedQuestion & { _key: string };
 
-// Explicit field-by-field rather than rest-destructuring `_key` away --
-// picking fields by name is clearer than a `{ _key, ...rest }` that
-// looks like it's discarding an unused variable (and trips the linter
-// on exactly that).
+// Copies each field over by name instead of a shortcut that drops `_key` -
+// that shortcut looks like an unused variable and trips up the linter.
 function stripLocalKey(d: Draft): GeneratedQuestion {
   return {
     prompt: d.prompt,
@@ -55,10 +52,9 @@ export function GenerateQuestionsFlow({
       ...(wantShortAnswer ? (["short_answer"] as const) : []),
     ];
     startTransition(async () => {
-      // generateQuestionDrafts returns a result object rather than
-      // throwing -- Next.js redacts thrown-Error messages from Server
-      // Actions in production, which would silently blank out every
-      // friendly message below (rate limited, not configured, etc.).
+      // Returns a result object instead of throwing an error - in
+      // production, Next.js hides the real text of thrown errors, which
+      // would blank out friendly messages like "rate limited" below.
       const result = await generateQuestionDrafts(topicId, count, types);
       if (!result.ok) {
         setError(result.message);
@@ -97,9 +93,8 @@ export function GenerateQuestionsFlow({
     if (!drafts || drafts.length === 0) return;
     setError(null);
     startTransition(async () => {
-      // On success this redirects and never returns to us at all. A
-      // returned value here means the friendly-failure path, not a
-      // thrown Error -- same redaction reasoning as handleGenerate above.
+      // A successful save redirects away and never returns here, so a
+      // returned value means it failed (same reason as handleGenerate above).
       const result = await saveGeneratedQuestions(topicId, drafts.map(stripLocalKey));
       if (result && !result.ok) {
         setError(result.message);
@@ -140,7 +135,7 @@ export function GenerateQuestionsFlow({
             </label>
           </div>
           <p className="mt-1 text-xs text-gray-500">
-            Long-answer questions aren&apos;t generated — they can&apos;t be auto-graded, so an AI-written
+            Long-answer questions aren&apos;t generated - they can&apos;t be auto-graded, so an AI-written
             one would count as correct no matter what you type. Add those by hand instead.
           </p>
         </div>
@@ -162,7 +157,7 @@ export function GenerateQuestionsFlow({
     <div className="space-y-4">
       {drafts.length === 0 ? (
         <p className="text-sm text-gray-600">
-          Nothing left to review — everything was discarded.{" "}
+          Nothing left to review - everything was discarded.{" "}
           <button onClick={startOver} className="text-blue-600 hover:underline">
             Generate more
           </button>

@@ -1,3 +1,4 @@
+// The form for editing a topic's name and description.
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateTopic } from "./actions";

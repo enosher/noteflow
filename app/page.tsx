@@ -1,3 +1,4 @@
+// The site's home page. Right now it just checks that Supabase is connected.
 import { createClient } from '@/lib/supabase/server'
 
 export default async function Home() {

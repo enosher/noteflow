@@ -1,3 +1,4 @@
+// The form for adding a new subtopic under a topic.
 import { createSubtopic } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
 

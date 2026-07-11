@@ -4,10 +4,9 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getModuleGraph } from "./actions";
 import GraphView from "./graph-view";
 
-// Server shell: confirm the module exists and belongs to the user (RLS
-// handles the ownership check, .single() throws if there's no row),
-// then fetch the graph once so the client component starts with data
-// already in hand. No first-paint spinner.
+// Server shell: RLS + .single() confirms ownership and 404s missing rows,
+// then the graph is fetched once so the client component starts with
+// data already in hand - no first-paint spinner.
 export default async function ConceptGraphPage({
   params,
 }: {
@@ -28,7 +27,7 @@ export default async function ConceptGraphPage({
   return (
     <main className="p-6 max-w-5xl mx-auto">
       <Breadcrumbs moduleId={id} />
-      <h1 className="text-2xl font-bold text-ink">{mod.code} — Concept graph</h1>
+      <h1 className="text-2xl font-bold text-ink">{mod.code} - Concept graph</h1>
       <p className="mt-1 text-sm text-muted">
         Click a topic, then click another to mark the first as its prerequisite.
         Drag nodes to rearrange, scroll to zoom, drag the background to pan, and
