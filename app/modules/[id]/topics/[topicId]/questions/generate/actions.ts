@@ -5,6 +5,16 @@
 // Splitting them is what makes "review before save" possible at all --
 // a single do-everything action would have nowhere to pause for the
 // human-in-the-loop step.
+//
+// Expected failures are RETURNED, not thrown. Next.js redacts the
+// message of any thrown Error crossing a Server Action boundary in
+// production builds -- the client only ever sees a generic "omitted in
+// production" string, which silently defeats every friendly message
+// below (rate limit, not-configured, no notes, etc.). Returning a
+// { ok: false, message } result instead sidesteps that redaction
+// entirely, since it's ordinary serialized data, not an Error object.
+// redirect() is the one exception -- Next.js treats it as a distinct
+// internal signal, unaffected by this redaction.
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -32,11 +42,15 @@ const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models
 // need its own model call, defeating the point of keeping this cheap.
 const MAX_NOTES_CHARS = 12000;
 
+export type GenerateResult =
+  | { ok: true; drafts: GeneratedQuestion[] }
+  | { ok: false; message: string };
+
 export async function generateQuestionDrafts(
   topicId: string,
   count: number,
   requestedTypes: string[]
-): Promise<GeneratedQuestion[]> {
+): Promise<GenerateResult> {
   // Checked first, before any DB round trip -- a missing key means this
   // deployment can never generate anything no matter what's in the
   // topic's notes, so there's no point spending queries to find that
@@ -44,7 +58,7 @@ export async function generateQuestionDrafts(
   // deployment (env var never added to Vercel), and the one where
   // "try again" is actively unhelpful advice.
   if (!process.env.GEMINI_API_KEY) {
-    throw new Error(NOT_CONFIGURED_MESSAGE);
+    return { ok: false, message: NOT_CONFIGURED_MESSAGE };
   }
 
   const supabase = await createClient();
@@ -54,6 +68,9 @@ export async function generateQuestionDrafts(
     .select("name")
     .eq("id", topicId)
     .single();
+  // Genuinely unexpected (the page itself already 404s on a missing
+  // topic) rather than a friendly guidance case, so this one throws
+  // and falls to the generic error boundary rather than the review UI.
   if (topicErr || !topic) throw new Error("Topic not found.");
 
   // Topic-level notes and subtopic notes are two separate queries rather
@@ -63,13 +80,13 @@ export async function generateQuestionDrafts(
     .from("notes")
     .select("title, content")
     .eq("topic_id", topicId);
-  if (notesErr) throw new Error(friendlyMessage(notesErr));
+  if (notesErr) return { ok: false, message: friendlyMessage(notesErr) };
 
   const { data: subtopics, error: subtopicsErr } = await supabase
     .from("subtopics")
     .select("id")
     .eq("topic_id", topicId);
-  if (subtopicsErr) throw new Error(friendlyMessage(subtopicsErr));
+  if (subtopicsErr) return { ok: false, message: friendlyMessage(subtopicsErr) };
 
   const subtopicIds = (subtopics ?? []).map((s) => s.id);
   let subtopicNotes: { title: string; content: string | null }[] = [];
@@ -78,7 +95,7 @@ export async function generateQuestionDrafts(
       .from("notes")
       .select("title, content")
       .in("subtopic_id", subtopicIds);
-    if (error) throw new Error(friendlyMessage(error));
+    if (error) return { ok: false, message: friendlyMessage(error) };
     subtopicNotes = data ?? [];
   }
 
@@ -91,9 +108,11 @@ export async function generateQuestionDrafts(
   );
 
   if (usableNotes.length === 0) {
-    throw new Error(
-      "This topic has no usable note content yet — add some notes (or notes with text, not just file attachments) before generating questions."
-    );
+    return {
+      ok: false,
+      message:
+        "This topic has no usable note content yet — add some notes (or notes with text, not just file attachments) before generating questions.",
+    };
   }
 
   const notesText = usableNotes
@@ -105,7 +124,7 @@ export async function generateQuestionDrafts(
     .from("questions")
     .select("prompt")
     .eq("topic_id", topicId);
-  if (existingErr) throw new Error(friendlyMessage(existingErr));
+  if (existingErr) return { ok: false, message: friendlyMessage(existingErr) };
   const existingPrompts = (existing ?? []).map((q) => q.prompt);
 
   const n = clampCount(count);
@@ -147,7 +166,7 @@ export async function generateQuestionDrafts(
     // DNS, offline, timeout. Distinct from a Gemini-side HTTP error.
     // This call runs server-side (Vercel), not in the user's browser, so
     // "check your connection" would be blaming the wrong machine.
-    throw new Error("Couldn't reach Gemini right now — try again in a moment.");
+    return { ok: false, message: "Couldn't reach Gemini right now — try again in a moment." };
   }
 
   if (!res.ok) {
@@ -156,7 +175,7 @@ export async function generateQuestionDrafts(
     // suggest enabling billing, since that deletes the free tier rather
     // than lifting the limit.
     console.error("Gemini API error", res.status, await res.text().catch(() => ""));
-    throw new Error(classifyGeminiError(res.status));
+    return { ok: false, message: classifyGeminiError(res.status) };
   }
 
   const body = await res.json();
@@ -170,25 +189,45 @@ export async function generateQuestionDrafts(
     // safety filter) rather than malformed -- worth a distinct message
     // since "try again" is actually good advice here, unlike for a
     // structural JSON failure.
-    throw new Error("Gemini didn't return anything usable — try again or adjust your notes.");
+    return {
+      ok: false,
+      message: "Gemini didn't return anything usable — try again or adjust your notes.",
+    };
   }
 
-  const parsed = parseGenerated(text); // throws its own friendly errors on structural failure
+  // parseGenerated throws on structural failure (unparseable/non-array
+  // JSON) -- caught here and turned into the same result shape as every
+  // other expected failure above, rather than let it escape as a thrown
+  // Error and hit the redaction issue this whole file is built around.
+  let parsed: GeneratedQuestion[];
+  try {
+    parsed = parseGenerated(text);
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : "Couldn't read Gemini's response." };
+  }
+
   const unique = dedupe(parsed, existingPrompts);
 
   if (unique.length === 0) {
-    throw new Error(
-      "Generation produced no usable new questions (everything was invalid or a duplicate of an existing question). Try again or add more notes."
-    );
+    return {
+      ok: false,
+      message:
+        "Generation produced no usable new questions (everything was invalid or a duplicate of an existing question). Try again or add more notes.",
+    };
   }
 
-  return unique;
+  return { ok: true, drafts: unique };
 }
 
+export type SaveResult = { ok: false; message: string };
+
+// No success branch in the return type: on success this ends in
+// redirect(), which never returns to the caller. Only the failure path
+// needs a shape the client can read.
 export async function saveGeneratedQuestions(
   topicId: string,
   drafts: GeneratedQuestion[]
-): Promise<void> {
+): Promise<SaveResult | void> {
   const supabase = await createClient();
 
   // Re-validated here even though parseGenerated already checked each
@@ -207,7 +246,7 @@ export async function saveGeneratedQuestions(
     .filter(isValidDraft);
 
   if (valid.length === 0) {
-    throw new Error("None of the selected questions passed validation — edit and try again.");
+    return { ok: false, message: "None of the selected questions passed validation — edit and try again." };
   }
 
   const { error } = await supabase.from("questions").insert(
@@ -222,7 +261,7 @@ export async function saveGeneratedQuestions(
       source: "ai",
     }))
   );
-  if (error) throw new Error(friendlyMessage(error));
+  if (error) return { ok: false, message: friendlyMessage(error) };
 
   const { data: topic } = await supabase
     .from("topics")
