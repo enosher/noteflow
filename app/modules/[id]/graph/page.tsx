@@ -31,8 +31,9 @@ export default async function ConceptGraphPage({
       <h1 className="text-2xl font-bold text-ink">{mod.code} — Concept graph</h1>
       <p className="mt-1 text-sm text-muted">
         Click a topic, then click another to mark the first as its prerequisite.
-        Drag nodes to rearrange. A dashed ring means the topic is gated behind
-        a weak prerequisite.
+        Drag nodes to rearrange, scroll to zoom, drag the background to pan, and
+        hover a topic to light up everything it depends on. A dashed ring means
+        the topic is gated behind a weak prerequisite.
       </p>
 
       {graph.topics.length === 0 ? (
