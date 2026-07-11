@@ -138,3 +138,11 @@ create policy "topic_prereq_delete_own"
       where t.id = topic_prerequisites.topic_id and m.user_id = auth.uid()
     )
   );
+
+-- 3. questions.source
+--    Tags whether a question was hand-written or came from the AI
+--    generation feature. Defaults to 'manual' so every pre-existing row (and every row inserted through
+--    the ordinary createQuestion) needs no backfill.
+alter table public.questions
+  add column if not exists source text not null default 'manual'
+  check (source in ('manual', 'ai'));

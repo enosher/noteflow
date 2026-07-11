@@ -90,6 +90,86 @@ Term definitions:
 
 ---
 
+## Error handling & first-run experience (M3)
+
+**Friendly error translation lives in one shared helper (`lib/errors.ts`), not per server action.** `friendlyMessage()` maps the handful of Postgres error codes a user can actually trigger from the UI (`23505` unique violation, `23503` FK violation, `23514` check violation, `42501` RLS denial) to plain-language copy, and falls through to the raw message for anything else - deliberately, so an unexpected error is still visible in server logs rather than silently swallowed. Every server action's `throw new Error(error.message)` was swapped for `throw new Error(friendlyMessage(error))`, a mechanical call-site change across 10 files with no other logic touched.
+
+**`app/error.tsx` catches anything the friendly-message swap doesn't.** A route-segment error boundary is the backstop for anything thrown below the root layout, so no raw error reaches an evaluator's screen even if a call site was missed.
+
+**Duplicate-create bug from double-clicking submit fixed by wiring the existing `SubmitButton` (`useFormStatus`) into 10 create/edit forms**, rather than adding new pending-state logic to each form individually. The component already existed from M2; this was rollout, not a rebuild.
+
+---
+
+## Demo account & first-run data (M3)
+
+**Chose self-service sample data over a single shared demo login as the primary fix, then added the shared login as a second, faster path.** The M2 complaint was "empty first five minutes" specifically; the actual fix is that any account can become populated in one click (`app/modules/sample-data-actions.ts`, backed by the same `lib/seed-data.ts` dataset used by the `scripts/seed-all.ts` backfill script for existing accounts) - an evaluator signing up fresh gets the same demo-quality experience without needing a shared credential at all. The one-click `demo@noteflow.app` login (`app/login/demo-actions.ts`) was added afterwards as a faster path for time-pressed evaluators, not a replacement.
+
+**Seed dataset covers two modules on purpose: CS2030S and GEA1000, not two CS modules.** GEA1000 is NUS's common quantitative-reasoning module; an evaluator or non-CS student shouldn't have to squint at a computing-only module to believe the app applies to them.
+
+**`seedAccountData()` is additive and idempotent - it never deletes, and skips any module code the account already has.** This is what makes it safe to run against a real, non-demo account through the self-service path, and safe to re-run the backfill script repeatedly without checking "did I already do this?" first.
+
+---
+
+## Spaced repetition (SM-2) (M3)
+
+**SM-2 maps correct/incorrect to a quality grade (4 or 2) instead of asking for a 0-5 self-assessment.** Wozniak's original algorithm expects the user to self-rate each review 0-5; adding that tap after every question was judged too much friction for the quiz flow already in place. The 0-5 machinery stays intact underneath so a future "that was easy" button could plug in a real quality value without changing `nextReviewState`'s signature.
+
+**On failure, SM-2 resets the streak but does not touch the ease factor.** Wozniak's algorithm keeps ease unchanged below quality 3; the penalty for a wrong answer is being due again tomorrow, not a harder curve going forward. Documented explicitly in `lib/sm2.ts` because it's the easy detail to get backwards.
+
+**SM-2 and the recommender are two different features answering two different questions, not overlapping ones.** SM-2's `/review` queue answers "what is due today" on a per-question time-based schedule; the recommender answers "what should I drill" based on topic weakness. This was flagged as a possible criticism at M1 ("isn't spaced repetition redundant with the recommender?") and resolved here as implemented truth rather than an assumption.
+
+---
+
+## Design tokens & dark mode (M3)
+
+**Semantic CSS variables (`--color-surface`, `--color-ink`, `--color-brand`, etc.) replace hardcoded hex values in `globals.css`, with a `.dark` override block for each.** New components read a colour by what it means (surface, ink, brand) rather than its hex value, so a dark-mode pass is a single block of variable overrides instead of hunting every page for hardcoded colours.
+
+**Theme toggle uses `useSyncExternalStore` to avoid a hydration mismatch, not `useState` + `useEffect`.** `next-themes` reads the theme from `localStorage` before React hydrates, so a naive default would flash the wrong icon on load; `useMounted()` renders a placeholder until the client is confirmed mounted, then swaps in the real toggle.
+
+---
+
+## Concept graph
+
+**Cycle checking happens in application code (`lib/prereq.ts`), not the database.** A Postgres `CHECK` constraint can't traverse rows, so there's no way to reject a cyclic prerequisite chain at the schema level. `wouldCreateCycle` runs a BFS from the proposed prerequisite's own prerequisites back towards the target topic before any insert is attempted, rejecting cycles at write time with a clear error message instead of tolerating a meaningless graph at read time.
+
+**Blocked topics are deprioritized in the recommender (0.5x score penalty), not excluded outright.** Excluding a blocked topic's questions entirely would leave the recommender with nothing to say on a module where every topic sits behind one shaky prerequisite. The penalty is applied after `getScoreBreakdown`, not folded into it, so the four scoring terms shown in the debug view still always sum to `breakdown.total`.
+
+**Concept graph UI is a hand-rolled SVG, not a charting or graph library.** Positions come from a simple topological-levels layout (column = level, row = order within level) computed in `lib/prereq.ts`; nodes are draggable from there. No new dependency, in line with Apollo 11 scope - a library like react-flow or d3 would add real capability but wasn't judged necessary for a single-module DAG this small.
+
+**`blockedTopics` and the graph's mastery colouring reuse existing constants instead of redefining them.** `WEAK_TOPIC_THRESHOLD` / `WEAK_TOPIC_MIN_ATTEMPTS` from `lib/weak-topics.ts` and `masteryTone` from `components/mastery-dot.tsx` are imported directly, so the concept graph's definition of "weak" can never quietly drift from the dashboard's.
+
+**Prerequisite edges are same-module only, enforced by trigger.** Cross-module prerequisites (e.g. CS2030S requiring CS1101S) are a real concept but out of scope for M3; same shape as the existing `questions_check_subtopic_parent` trigger, since a `CHECK` constraint can't join across tables to verify the two topics share a `module_id`.
+
+**The dynamic graph layout is a hand-rolled force simulation (`lib/graph-layout.ts`) — still no library.** Revisited when the interactivity pass added pan/zoom, physics, chain highlighting, and a minimap; the earlier no-dependency decision held. The deciding property a generic force layout (d3-force, react-flow) won't guarantee: each node's x stays anchored to its topological level, so the DAG always reads left-to-right regardless of how the physics settles. Pure and Supabase-free like `prereq.ts`, so the forces are pinned by unit tests rather than eyeballed in a browser.
+
+**The simulation mutates a private node array in rAF callbacks and publishes immutable snapshots to React state once per tick.** Next.js 16's `react-hooks/refs` lint (React Compiler) rejects reading refs during render; snapshot-publishing satisfies the rule genuinely instead of suppressing it, at the cost of one shallow array copy per frame — negligible at tens of nodes.
+
+---
+
+## AI question generation (M3)
+
+**Generation scoped to mcq and short_answer only, never long_answer.** long_answer questions are always auto-graded correct by submitAnswer() (string-match grading isn't meaningful for free text); an AI-generated long_answer question would inflate accuracy stats with corrects nobody earned. Enforced in lib/generated-questions.ts's VALID_TYPES set, not just the UI's type picker.
+
+**Invalid drafts are dropped silently at parse time, not shown to the user or thrown as a batch failure.** One malformed item from Gemini (missing field, MCQ answer not matching an option) doesn't cost the whole generation - parseGenerated() drops just that item. Only structural failures (unparseable JSON, non-array top level) throw.
+
+**Every draft is re-validated at save time, not just trusted from parsing.** isValidDraft() runs once after parsing and again, unconditionally, in saveGeneratedQuestions() - a user can edit a draft's answer in the review UI into something that no longer matches its own MCQ options.
+
+**Dedup uses Jaccard token-overlap similarity (0.8 threshold) against the topic's existing questions and the rest of the batch, not exact string match.** Exact match misses trivial rephrasings; full semantic dedup would mean adding embeddings for one button click. 0.8 was picked by hand-checking real near-duplicate pairs.
+
+**Notes scope is topic-level notes plus notes on all of the topic's subtopics, not topic-level only.** A topic's content usually lives partly in its subtopics; topic-level-only would starve the model of most of the real material for any topic using subtopics.
+
+**Save batches all kept drafts into one insert + one redirect, rather than per-card insert+redirect.** The existing single-question createQuestion action redirects immediately after insert; reusing it per accepted card would navigate away from the review screen after the first accept and strand every other unreviewed proposal.
+
+**Added questions.source ('manual' | 'ai', default 'manual') to tag provenance.** Costs nothing for existing rows; enables an accept-rate stat and distinguishes AI-originated questions going forward.
+
+**Gemini called directly via fetch, no SDK dependency added.** Consistent with the project's lean dependency list; a single JSON-in/JSON-out call didn't justify a new package.
+
+**responseMimeType: "application/json" plus a responseSchema are request-time constraints, not guarantees - parseGenerated() still validates independently.** If Gemini's schema enforcement has a gap, the failure mode is "fewer questions survive validation," never a bad row reaching the database.
+
+**Free-tier disclosure still needed:** the free tier lets Google train on inputs/outputs - i.e. on users' study notes. Needs one line in the README's Known Limitations section (a writing task, not a code one - flagging here so it doesn't get lost).
+
+---
+
 ## Breadcrumbs
 
 **Breadcrumb component does a Supabase fetch per crumb level rather than one combined query.** Documented and accepted as a known trade-off: simplicity of one query per level, over a more complex single query, given the hierarchy is only three levels deep (Module → Topic → Subtopic) — the extra round-trips are cheap in practice at this depth.
