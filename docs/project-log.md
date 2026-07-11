@@ -167,18 +167,35 @@ Each row records work done on the project. Log every hour, including self-learni
 |------------|-----------------------------------------------------------------------------------------------------------|-------|
 | 2026-06-03 | Reviewed and graded peer teams' Milestone 2 against the rubrics | 1.0 |
 | 2026-06-07 | Reviewed TA and peer feedback; ideated implementation changes in response | 2.0 |
-| 2026-07-08 | Reproduced M2 evaluator crash reports on fresh account; queried auth.users for orphaned profiles, found 4 affected rows, backfilled via insert; confirmed root cause was pre-trigger signups, documented in decisions-log | 1.5 |
-| 2026-07-08 | Added app/error.tsx route-level error boundary and lib/errors.ts Postgres error translation; swapped throw new Error(error.message) for friendlyMessage(error) across 14 call sites in 10 server action files | 1.0 |
-| 2026-07-08 | Fixed duplicate-create bug from double-clicking submit buttons; wired existing SubmitButton (useFormStatus) into 10 create/edit forms with per-form pending labels | 0.5 |
-| 2026-07-08 | Added next-themes with class-based dark mode toggle; replaced ad-hoc CSS vars with semantic design tokens (surface/card/ink/brand/line/muted) and mastery colour scale in globals.css; built MasteryDot component, wired into dashboard accuracy table | 2.0 |
-| **Total**  |                                                                                                           | **8.0** |
+| **Total**  |                                                                                                           | **3.0** |
 
 ### Enosh Er
 
 | Date       | Task                                                                                                      | Hours |
 |------------|-----------------------------------------------------------------------------------------------------------|-------|
-|            |                                                                                                           |       |
-| **Total**  |                                                                                                           | **0.0** |
+| 2026-07-07 | Wired existing `SubmitButton` (`useFormStatus`) into 10 create/edit forms with per-form pending labels, fixing a duplicate-create bug from double-clicking submit; PR #54 | 1.0 |
+| 2026-07-07 | Added `app/error.tsx` route-level error boundary and `lib/errors.ts` (`friendlyMessage()` Postgres error code translation); swapped `throw new Error(error.message)` for `friendlyMessage(error)` across 10 server action files; PR #55 | 1.5 |
+| 2026-07-07 | Added semantic design tokens to `globals.css` (light/dark variable pairs), built `MasteryDot` component, added `next-themes` dark/light toggle (`components/theme-toggle.tsx`, using `useSyncExternalStore` to avoid a hydration mismatch); wired into dashboard, layout, and nav bar| 3.5 |
+| 2026-07-08 | Reproduced M2 evaluator crash reports on a fresh account; queried `auth.users` for orphaned `profiles` rows, found 4 affected, backfilled via insert; confirmed root cause was pre-trigger signups; documented in `decisions-log.md` | 1.5 |
+| 2026-07-08 | Built `lib/seed-data.ts` (two-module seed dataset: CS2030S, GEA1000), `scripts/seed-all.ts` backfill script, `app/modules/sample-data-actions.ts` self-service action wired into the empty `/modules` state; wrote README credentials/setup block| 3.0 |
+| 2026-07-09 | Appended `review_schedule` table + RLS to `docs/m3_schema.sql`; built `lib/sm2.ts` pure SM-2 core (correct/incorrect -> quality 4/2 mapping, ease-factor floor at 1.3); wrote 12 Vitest boundary tests in `lib/sm2.test.ts` | 3.0 |
+| 2026-07-09 | Built `app/review/actions.ts` (`getDueReviews`, `updateReviewSchedule`, `getDueReviewCount`); hooked `updateReviewSchedule` into `submitAnswer`; fixed its insert error to route through `friendlyMessage()` (was raw `.message`) | 2.0 |
+| 2026-07-09 | Built `/review` page and review session UI (`app/review/review-session.tsx`); added nav due-count badge (`nav-items.ts`/`NavLinks.tsx`/`NavBar.tsx`); PR #58; fixed a dash-style copy nit in the empty-state text (PR #59) | 3.0 |
+| 2026-07-09 | Built one-click demo login on `/login` (`app/login/demo-actions.ts`) using `DEMO_EMAIL`/`DEMO_PASSWORD` env vars, with a friendly fallback message if the demo account is unavailable; PR #60; fixed a dash-style copy nit in the caption (PR #61) | 1.5 |
+| 2026-07-10 | Appended `topic_prerequisites` schema to `docs/m3_schema.sql` - table, same-module trigger, RLS policies scoped through topics -> modules; ran migration in Supabase SQL editor; regenerated TypeScript types | 1.0 |
+| 2026-07-10 | Built `lib/prereq.ts` - `wouldCreateCycle` (BFS cycle detection), `blockedTopics` (gating, reusing `WEAK_TOPIC_THRESHOLD`/`WEAK_TOPIC_MIN_ATTEMPTS` from `lib/weak-topics.ts` rather than redefining them), `topologicalLevels` (DAG layout for the graph UI); wrote 12 Vitest boundary tests in `lib/prereq.test.ts` | 4.0 |
+| 2026-07-10 | Built `app/modules/[id]/graph/actions.ts` - `getModuleGraph`, `addPrerequisite` (client-side cycle check before insert, since a DB CHECK can't traverse rows), `removePrerequisite` | 2.0 |
+| 2026-07-10 | Built `app/modules/[id]/graph/page.tsx` and `graph-view.tsx` - interactive SVG concept graph with draggable nodes, click-to-connect edges, click-to-delete edges, mastery-coloured nodes, animated dashed ring on blocked topics; added a "Concept graph" nav link on the module detail page | 6.0 |
+| 2026-07-10 | Wired concept-graph gating into `lib/recommender.ts` - `applyBlockedPenalty` (0.5x score penalty for blocked topics, applied outside the transparent score breakdown so the four terms still sum to `total`); added 2 Vitest tests | 2.0 |
+| 2026-07-10 | Debugged a stale `.git/index.lock` blocking branch creation, stash, and commit; resolved manually | 1.0 |
+| 2026-07-10 | Built `lib/graph-layout.ts` pure force simulation (link springs, pairwise repulsion + collision, topological column anchor, deterministic seeding); wrote 13 Vitest tests in `lib/graph-layout.test.ts` | |
+| 2026-07-10 | Rewrote `graph-view.tsx` as a dynamic canvas - pan/zoom (cursor-anchored wheel + pinch), animated fit-to-view, live physics with drag ripple, prerequisite-chain hover highlighting, hover card (accuracy/attempts/blocked reason), click-to-jump minimap, curved edges; restructured to per-tick snapshot publishing to satisfy the React Compiler `react-hooks/refs` lint | |
+| 2026-07-11 | Built `lib/generated-questions.ts` - `parseGenerated` (JSON/fence parsing + per-field validation), `isValidDraft` (reused at parse and save time), `isDuplicate`/`dedupe` (Jaccard token-overlap, 0.8 threshold), `classifyGeminiError`, `buildGenerationPrompt`, `clampCount`/`normalizeTypes`; wrote 46 Vitest boundary/partition tests in `lib/generated-questions.test.ts` | |
+| 2026-07-11 | Appended `questions.source` (`'manual'`/`'ai'`) column to `docs/m3_schema.sql`; updated `lib/types/database.ts` Row/Insert/Update types to match (pending a real `supabase gen types` regen once the migration runs) | |
+| 2026-07-11 | Built `app/modules/[id]/topics/[topicId]/questions/generate/actions.ts` - `generateQuestionDrafts` (topic + subtopic notes gathering, `gemini-2.5-flash` call via `fetch` with `GEMINI_API_KEY`, `responseMimeType`/`responseSchema` JSON enforcement) and `saveGeneratedQuestions` (re-validation, bulk insert with `source: 'ai'`, single redirect) | |
+| 2026-07-11 | Built `.../questions/generate/page.tsx` and `GenerateQuestionsFlow.tsx` - config form (count 1-8, MCQ/short-answer picker), editable review cards with per-card discard and live validation, save/start-over/cancel; wired a "Generate questions" link into the topic detail page | |
+| 2026-07-11 | Verified: `npm test` (89/89 passing, 5 files), `npm run lint` (clean), `npx tsc --noEmit` (clean); `npm run build` not runnable in sandbox (SWC binary unavailable) - needs a local build check before commit | |
+| **Total**  |                                                                                                           | **39.0** |
 
 ---
 
@@ -207,9 +224,9 @@ Each row records work done on the project. Log every hour, including self-learni
 | Liftoff          | 18 May 2pm SGT  | 10.5            | 11.5          | 22.0     |
 | Milestone 1      | 1 Jun 2pm SGT   | 17.0            | 30.0          | 47.0     |
 | Milestone 2      | 29 Jun 2pm SGT  | 54.5            | 104.5         | 159.0    |
-| Milestone 3      | 27 Jul 2pm SGT  | 0.0             | 0.0           | 0.0      |
+| Milestone 3      | 27 Jul 2pm SGT  | 3.0             | 39.0          | 42.0     |
 | Splashdown       | 26 Aug          | 0.0             | 0.0           | 0.0      |
-| **Running Total**|                 | **82.0**        | **146.0**     | **228.0**|
+| **Running Total**|                 | **85.0**        | **185.0**     | **270.0**|
 | **Target**       | By Splashdown   | **140**         | **140**       | **280**  |
 
 ---
