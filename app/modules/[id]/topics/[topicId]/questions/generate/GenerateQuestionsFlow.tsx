@@ -55,15 +55,16 @@ export function GenerateQuestionsFlow({
       ...(wantShortAnswer ? (["short_answer"] as const) : []),
     ];
     startTransition(async () => {
-      try {
-        const result = await generateQuestionDrafts(topicId, count, types);
-        setDrafts(result.map((d, i) => ({ ...d, _key: `${Date.now()}-${i}` })));
-      } catch (e) {
-        // Server errors here are already written to be user-facing (no
-        // notes, rate limited, all duplicates) -- show verbatim rather
-        // than wrapping in another layer of "something went wrong".
-        setError(e instanceof Error ? e.message : "Generation failed.");
+      // generateQuestionDrafts returns a result object rather than
+      // throwing -- Next.js redacts thrown-Error messages from Server
+      // Actions in production, which would silently blank out every
+      // friendly message below (rate limited, not configured, etc.).
+      const result = await generateQuestionDrafts(topicId, count, types);
+      if (!result.ok) {
+        setError(result.message);
+        return;
       }
+      setDrafts(result.drafts.map((d, i) => ({ ...d, _key: `${Date.now()}-${i}` })));
     });
   }
 
@@ -96,13 +97,12 @@ export function GenerateQuestionsFlow({
     if (!drafts || drafts.length === 0) return;
     setError(null);
     startTransition(async () => {
-      try {
-        await saveGeneratedQuestions(topicId, drafts.map(stripLocalKey));
-        // saveGeneratedQuestions redirects on success -- if we get past
-        // the await, either it redirected already or something odd
-        // happened; either way there's nothing left to do here.
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Save failed.");
+      // On success this redirects and never returns to us at all. A
+      // returned value here means the friendly-failure path, not a
+      // thrown Error -- same redaction reasoning as handleGenerate above.
+      const result = await saveGeneratedQuestions(topicId, drafts.map(stripLocalKey));
+      if (result && !result.ok) {
+        setError(result.message);
       }
     });
   }
