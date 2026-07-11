@@ -146,3 +146,35 @@ create policy "topic_prereq_delete_own"
 alter table public.questions
   add column if not exists source text not null default 'manual'
   check (source in ('manual', 'ai'));
+
+-- 4. ai_generation_log
+--    One row per Gemini call attempt (not per accepted question). Exists
+--    to enforce a shared daily cap on the single GEMINI_API_KEY this
+--    deployment uses -- protects it from being exhausted by one
+--    enthusiastic tester during a grading window, leaving nothing left
+--    for anyone testing after them. No user_id, no ownership: unlike
+--    every other table in this schema, the resource being protected
+--    (the API key) is shared across every account, not owned by any one
+--    of them, so RLS here is "any signed-in user" rather than the usual
+--    module-ownership chain.
+create table if not exists public.ai_generation_log (
+  id         uuid primary key default gen_random_uuid(),
+  called_at  timestamptz not null default now()
+);
+
+-- Supports the "how many calls in the last 24h" query the cap check runs
+-- on every generate click.
+create index if not exists ai_generation_log_called_at_idx
+  on public.ai_generation_log(called_at);
+
+alter table public.ai_generation_log enable row level security;
+
+drop policy if exists "ai_generation_log_select_signed_in" on public.ai_generation_log;
+create policy "ai_generation_log_select_signed_in"
+  on public.ai_generation_log for select
+  using (auth.uid() is not null);
+
+drop policy if exists "ai_generation_log_insert_signed_in" on public.ai_generation_log;
+create policy "ai_generation_log_insert_signed_in"
+  on public.ai_generation_log for insert
+  with check (auth.uid() is not null);

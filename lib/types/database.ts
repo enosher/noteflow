@@ -39,6 +39,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_generation_log: {
+        Row: {
+          called_at: string
+          id: string
+        }
+        Insert: {
+          called_at?: string
+          id?: string
+        }
+        Update: {
+          called_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       modules: {
         Row: {
           code: string

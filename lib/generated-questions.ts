@@ -253,6 +253,29 @@ ${typeRules.join("\n")}
 export const NOT_CONFIGURED_MESSAGE =
   "AI question generation isn't configured on this deployment right now — see the milestone video for a live demo of this feature.";
 
+// Deliberately well under Gemini's actual free-tier daily ceiling. This
+// deployment shares ONE GEMINI_API_KEY across every tester who signs up
+// -- without a self-imposed cap set below Google's real limit, one
+// enthusiastic tester spamming "Generate questions" could exhaust the
+// whole day's quota and lock everyone else out with no warning. The
+// margin also means our own cap trips first, before Google's actual
+// 429 does, so this message (not the generic rate-limit one) is what
+// testers actually see when the shared quota is running low.
+export const DAILY_GENERATION_CAP = 40;
+
+// Distinct from classifyGeminiError's 429 case on purpose: a real
+// Gemini rate limit is usually a per-minute thing ("wait a bit"), but
+// hitting OUR cap means the shared daily allowance is genuinely spent
+// for the day -- "try again in a minute" would be actively misleading,
+// so this points at proof the feature works instead, same reasoning as
+// NOT_CONFIGURED_MESSAGE.
+export const USAGE_CAPPED_MESSAGE =
+  "AI question generation has hit its shared usage cap for today — see the milestone video for a live demo of this feature, or try again tomorrow.";
+
+export function isOverDailyCap(callsInLast24h: number): boolean {
+  return callsInLast24h >= DAILY_GENERATION_CAP;
+}
+
 // Maps a Gemini HTTP failure to a message a user can act on. Split out
 // as a pure function (rather than inlined in the fetch call) so the
 // mapping itself is unit-testable without a network mock — and so a
