@@ -33,7 +33,12 @@ import {
   type GeneratedQuestion,
 } from "@/lib/generated-questions";
 
-const MODEL = "gemini-2.5-flash";
+// gemini-2.5-flash started 404ing for new API keys/projects on Jul 9 2026
+// (Google's own deprecations page still lists it as valid until Oct 16
+// 2026, but new keys got cut off early -- 
+// see https://discuss.ai.google.dev/t/gemini-2-5-flash-and-gemini-2-5-flash-lite-returning-404-no-longer-available-today-july-9-contradicts-oct-16-2026-shutdown-date/174267).
+// gemini-3.5-flash is Google's own listed replacement and the current default flash model, still on the free tier.
+const MODEL = "gemini-3.5-flash";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 // Bounds the notes blob regardless of how much a topic has accumulated --

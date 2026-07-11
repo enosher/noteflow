@@ -195,6 +195,8 @@ Each row records work done on the project. Log every hour, including self-learni
 | 2026-07-11 | Built `app/modules/[id]/topics/[topicId]/questions/generate/actions.ts` - `generateQuestionDrafts` (topic + subtopic notes gathering, `gemini-2.5-flash` call via `fetch` with `GEMINI_API_KEY`, `responseMimeType`/`responseSchema` JSON enforcement) and `saveGeneratedQuestions` (re-validation, bulk insert with `source: 'ai'`, single redirect) | |
 | 2026-07-11 | Built `.../questions/generate/page.tsx` and `GenerateQuestionsFlow.tsx` - config form (count 1-8, MCQ/short-answer picker), editable review cards with per-card discard and live validation, save/start-over/cancel; wired a "Generate questions" link into the topic detail page | |
 | 2026-07-11 | Verified: `npm test` (89/89 passing, 5 files), `npm run lint` (clean), `npx tsc --noEmit` (clean); `npm run build` not runnable in sandbox (SWC binary unavailable) - needs a local build check before commit | |
+| 2026-07-11 | Fixed thrown-Error redaction bug: Next.js blanks the message of any Error thrown from a Server Action in production, silently swallowing every friendly message in the AI-gen flow; `generateQuestionDrafts`/`saveGeneratedQuestions` now return `{ ok, message }` for expected failures instead of throwing | |
+| 2026-07-11 | `gemini-2.5-flash` started 404ing for new API keys/projects on Google's side (Jul 9 2026, ahead of its listed Oct 16 2026 shutdown - confirmed via Google AI Developers Forum); switched `MODEL` to `gemini-3.5-flash`, Google's listed replacement | |
 | **Total**  |                                                                                                           | **39.0** |
 
 ---
