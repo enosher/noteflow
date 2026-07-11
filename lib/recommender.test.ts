@@ -33,6 +33,24 @@ describe("recencyBoostScore", () => {
   it("boosts a never-attempted question", () => {
     expect(recencyBoostScore(null)).toBe(1);
   });
+
+  // RECENCY_WINDOW_DAYS is 7; the two tests above use 14 days and 1 day,
+  // well clear of the line. These pin the boundary itself: the check is
+  // `daysSince >= 7`, so exactly 7 days must already count as overdue.
+  it("boundary: exactly 7 days ago counts as overdue (the >= cutoff)", () => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    expect(recencyBoostScore(sevenDaysAgo)).toBe(1);
+  });
+
+  it("boundary: just under 7 days ago does not yet boost", () => {
+    // One minute short of 7 days - comfortably on the "not yet" side
+    // even accounting for the small delay between building this
+    // timestamp and the function's own Date.now() call.
+    const almostSevenDays = new Date(
+      Date.now() - (7 * 24 * 60 * 60 * 1000 - 60 * 1000)
+    ).toISOString();
+    expect(recencyBoostScore(almostSevenDays)).toBe(0);
+  });
 });
 
 describe("mistakeRecencyScore", () => {
