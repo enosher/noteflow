@@ -50,7 +50,7 @@ export default async function DashboardPage() {
               >
                 <Link
                   href={`/modules/${t.module_id}/topics/${t.topic_id}`}
-                  className="font-medium !text-amber-900 hover:underline"
+                  className="font-medium text-amber-900! hover:underline"
                 >
                   {t.topic_name}
                 </Link>
