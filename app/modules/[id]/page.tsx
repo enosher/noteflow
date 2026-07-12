@@ -5,6 +5,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { deleteModule } from "./edit/actions"; 
 import { deleteTopic } from "./topics/[topicId]/edit/actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import EmptyState from "@/components/empty-state";
 
 export default async function ModuleDetailPage({
   params,
@@ -31,26 +32,26 @@ export default async function ModuleDetailPage({
   const topics = topicsRes.data ?? [];
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
+    <main className="mx-auto max-w-3xl p-6">
       
       {/* Replaced the manual Link with the new Breadcrumbs component */}
       <Breadcrumbs moduleId={id} />
 
-      <div className="flex items-start justify-between">
+      <div className="mt-4 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{mod.code}</h1>
-          <p className="text-gray-600">{mod.name}</p>
+          <h1 className="text-2xl font-bold text-ink">{mod.code}</h1>
+          <p className="text-muted">{mod.name}</p>
         </div>
         <div className="flex gap-2">
           <Link
             href={`/modules/${id}/graph`}
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-md border border-line px-3 py-1.5 text-sm text-ink transition-colors hover:bg-line/20"
           >
             Concept graph
           </Link>
           <Link
             href={`/modules/${id}/edit`}
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-md border border-line px-3 py-1.5 text-sm text-ink transition-colors hover:bg-line/20"
           >
             Edit
           </Link>
@@ -62,36 +63,40 @@ export default async function ModuleDetailPage({
       </div>
 
       {mod.description && (
-        <p className="text-gray-700 mt-2">{mod.description}</p>
+        <p className="mt-2 text-ink">{mod.description}</p>
       )}
 
-      <div className="flex items-center justify-between mt-8 mb-4">
-        <h2 className="text-lg font-semibold">Topics</h2>
+      <div className="mb-4 mt-8 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-ink">Topics</h2>
         <Link
           href={`/modules/${id}/topics/new`}
-          className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-sm"
+          className="rounded-md bg-brand px-4 py-2 text-sm text-white transition-opacity hover:opacity-80"
         >
           + New topic
         </Link>
       </div>
 
       {topicsRes.error ? (
-        <p className="text-red-600">Could not load topics. Try refreshing.</p>
+        <p className="text-sm text-red-500">Could not load topics. Try refreshing.</p>
       ) : topics.length === 0 ? (
-        <p className="text-gray-600">No topics yet. Add your first one to get started.</p>
+        <EmptyState
+          message="Topics break your module down into chapters or weeks. Add your first topic to start attaching notes and practice questions."
+          actionLabel="Create your first topic"
+          actionHref={`/modules/${id}/topics/new`}
+        />
       ) : (
         <ul className="space-y-2">
           {topics.map((t) => (
-            <li key={t.id} className="rounded-md border p-4 hover:bg-gray-50 flex items-center justify-between">
-              <Link href={`/modules/${id}/topics/${t.id}`} className="flex-1 flex items-center gap-3 group">
+            <li key={t.id} className="flex items-center justify-between rounded-md border border-line bg-card p-4 transition-colors hover:border-brand/30 hover:shadow-sm">
+              <Link href={`/modules/${id}/topics/${t.id}`} className="group flex flex-1 items-center gap-3">
                 <div>
-                  <div className="font-medium group-hover:text-blue-600 group-hover:underline">{t.name}</div>
-                  {t.description && <div className="text-sm text-gray-600">{t.description}</div>}
+                  <div className="font-medium text-ink group-hover:text-brand group-hover:underline">{t.name}</div>
+                  {t.description && <div className="text-sm text-muted">{t.description}</div>}
                 </div>
-                <span className="text-gray-300 group-hover:text-blue-400 text-lg">›</span>
+                <span className="text-lg text-muted transition-colors group-hover:text-brand">›</span>
                </Link>
-              <div className="flex gap-2 ml-4">
-                <Link href={`/modules/${id}/topics/${t.id}/edit`} className="text-sm text-blue-600 hover:underline self-center">
+              <div className="ml-4 flex gap-2">
+                <Link href={`/modules/${id}/topics/${t.id}/edit`} className="self-center text-sm text-brand hover:underline">
                   Edit
                 </Link>
                 <DeleteButton
