@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { MasteryDot } from "@/components/mastery-dot";
 
-
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {
@@ -25,15 +24,15 @@ export default async function DashboardPage() {
   return (
     <main className="p-6 max-w-3xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Welcome, {user.email}</p>
+        <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
+        <p className="text-muted mt-1">Welcome, {user.email}</p>
       </div>
 
       {/* Weak topics - the "Track" feature's headline output */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-3">Weak topics</h2>
+        <h2 className="text-lg font-semibold mb-3 text-ink">Weak topics</h2>
         {weakTopics.length === 0 ? (
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted text-sm">
             {topicStats.length === 0
               ? "No quiz attempts yet - take a quiz to see your weak topics here."
               : "No weak topics flagged yet - keep going!"}
@@ -47,7 +46,7 @@ export default async function DashboardPage() {
               >
                 <Link
                   href={`/modules/${t.module_id}/topics/${t.topic_id}`}
-                  className="font-medium hover:underline"
+                  className="font-medium text-amber-900! hover:underline"
                 >
                   {t.topic_name}
                 </Link>
@@ -62,29 +61,29 @@ export default async function DashboardPage() {
 
       {/* Accuracy by topic - full table, not just the weak ones */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-3">Accuracy by topic</h2>
+        <h2 className="text-lg font-semibold mb-3 text-ink">Accuracy by topic</h2>
         {topicStats.length === 0 ? (
-          <p className="text-gray-500 text-sm">Nothing recorded yet.</p>
+          <p className="text-muted text-sm">Nothing recorded yet.</p>
         ) : (
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="text-left border-b border-gray-200">
-                <th className="py-2 font-medium text-gray-500">Topic</th>
-                <th className="py-2 font-medium text-gray-500">Accuracy</th>
-                <th className="py-2 font-medium text-gray-500">Attempts</th>
+              <tr className="text-left border-b border-line">
+                <th className="py-2 font-medium text-muted">Topic</th>
+                <th className="py-2 font-medium text-muted">Accuracy</th>
+                <th className="py-2 font-medium text-muted">Attempts</th>
               </tr>
             </thead>
             <tbody>
               {topicStats.map((t) => (
-                <tr key={t.topic_id} className="border-b border-gray-100">
+                <tr key={t.topic_id} className="border-b border-line/50">
                   <td className="py-2">
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center gap-2 text-ink">
                       <MasteryDot accuracy={t.accuracy} attempts={t.attempts} />
                       {t.topic_name}
                     </span>
                   </td>
-                  <td className="py-2 tabular-nums">{Math.round(t.accuracy * 100)}%</td>
-                  <td className="py-2">{t.attempts}</td>
+                  <td className="py-2 tabular-nums text-ink">{Math.round(t.accuracy * 100)}%</td>
+                  <td className="py-2 text-ink">{t.attempts}</td>
                 </tr>
               ))}
             </tbody>
@@ -94,22 +93,22 @@ export default async function DashboardPage() {
 
       {/* Recommendation - the "Adapt" feature */}
       <section>
-        <h2 className="text-lg font-semibold mb-3">Recommended next</h2>
+        <h2 className="text-lg font-semibold mb-3 text-ink">Recommended next</h2>
         {recommendation ? (
-          <div className="rounded-lg border border-gray-200 p-4 shadow-sm">
-            <p className="mb-1 text-xs uppercase tracking-wide text-gray-400">
+          <div className="rounded-lg border border-line bg-card p-4 shadow-sm">
+            <p className="mb-1 text-xs uppercase tracking-wide text-muted">
               {recommendation.topic_name}
             </p>
-            <p className="mb-4">{recommendation.prompt}</p>
+            <p className="mb-4 text-ink">{recommendation.prompt}</p>
             <Link
               href={`/modules/${recommendation.module_id}/topics/${recommendation.topic_id}/quiz`}
-              className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+              className="inline-block rounded-md bg-brand px-4 py-2 text-sm text-white transition-opacity hover:opacity-80"
             >
               Practice this topic
             </Link>
           </div>
         ) : (
-          <p className="text-gray-500 text-sm">
+          <p className="text-muted text-sm">
             Add some questions and take a quiz to get a recommendation.
           </p>
         )}
