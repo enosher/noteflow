@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { loadSampleData } from "./sample-data-actions";
+import EmptyState from "@/components/empty-state";
 
 /**
  * ModulesPage - lists all modules belonging to the signed-in user.
@@ -44,23 +45,19 @@ export default async function ModulesPage() {
         </Link>
       </div>
 
-      {/* Empty state - shown on first login before any modules exist */}
+      {/* Empty state - Spencer's shared component + his Day 2 copy,
+          keeping the sample-data escape hatch. */}
       {modules.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line p-10 text-center">
-          <p className="text-sm text-ink">No modules yet.</p>
-          <p className="mt-1 text-sm text-muted">
-            Create your first module to start organising your notes.
-          </p>
-          <Link
-            href="/modules/new"
-            className="mt-4 inline-block rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
-            Create module
-          </Link>
+        <div className="space-y-4">
+          <EmptyState
+            message="Your modules organise everything — notes, questions, and quiz history live inside them."
+            actionLabel="Create your first module"
+            actionHref="/modules/new"
+          />
           {/* Escape hatch from a blank first run: pulls in two ready-made
               modules with weeks of quiz history so Track/Adapt are visible
               without the user having to generate that history by hand. */}
-          <form action={loadSampleData} className="mt-3">
+          <form action={loadSampleData} className="text-center">
             <button type="submit" className="text-sm text-brand underline underline-offset-2 hover:text-brand-hover">
               Or load sample data to explore first
             </button>

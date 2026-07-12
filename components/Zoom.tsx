@@ -26,7 +26,7 @@ export function Zoom() {
           onClick={() => setOpen(false)}
         >
           <div
-            className="rounded-2xl bg-ink p-10 shadow-xl"
+            className="rounded-2xl bg-card p-10 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <FlowMark size={220} />

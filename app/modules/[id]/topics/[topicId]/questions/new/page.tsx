@@ -1,17 +1,19 @@
 import { createQuestion } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function NewQuestionPage({
   params,
 }: {
   params: Promise<{ id: string; topicId: string }>;
 }) {
-  const { topicId } = await params;
+  const { id: moduleId, topicId } = await params;
   const createInThisTopic = createQuestion.bind(null, topicId);
 
   return (
     <main className="mx-auto max-w-xl p-6 sm:p-8">
-      <h1 className="font-display text-2xl font-semibold text-ink mb-6">New question</h1>
+      <Breadcrumbs moduleId={moduleId} topicId={topicId} />
+      <h1 className="font-display text-2xl font-semibold text-ink mb-6 mt-4">New question</h1>
       
       <form action={createInThisTopic} className="space-y-5">
         

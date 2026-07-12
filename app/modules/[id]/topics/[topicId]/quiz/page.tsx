@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { QuizRunner, QuizQuestion } from "./QuizRunner";
+import EmptyState from "@/components/empty-state";
 
 export default async function QuizPage({
   params,
@@ -21,7 +22,11 @@ export default async function QuizPage({
       <h1 className="mb-6 font-display text-2xl font-semibold text-ink">Quiz</h1>
 
       {!questions || questions.length === 0 ? (
-        <p className="text-sm text-muted">No questions yet for this topic - add some first.</p>
+        <EmptyState
+          message="No questions yet for this topic. Add some to test your mastery."
+          actionLabel="Add a question"
+          actionHref={`/modules/${moduleId}/topics/${topicId}/questions/new`}
+        />
       ) : (
         <QuizRunner
           // `options` comes back from Supabase typed as `Json | null`, but

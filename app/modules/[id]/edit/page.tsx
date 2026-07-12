@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { updateModule } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function EditModulePage({
   params,
@@ -24,7 +25,8 @@ export default async function EditModulePage({
 
   return (
     <main className="mx-auto max-w-xl p-6 sm:p-8">
-      <h1 className="font-display text-2xl font-semibold text-ink mb-6">Edit module</h1>
+      <Breadcrumbs moduleId={id} />
+      <h1 className="font-display text-2xl font-semibold text-ink mb-6 mt-4">Edit module</h1>
       <form action={updateThisModule} className="space-y-4">
         <label className="block">
           <span className="text-sm font-medium">Code</span>

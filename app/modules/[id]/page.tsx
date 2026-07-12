@@ -5,6 +5,7 @@ import { DeleteButton } from "@/components/DeleteButton";
 import { deleteModule } from "./edit/actions";
 import { deleteTopic } from "./topics/[topicId]/edit/actions";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import EmptyState from "@/components/empty-state";
 
 export default async function ModuleDetailPage({
   params,
@@ -74,9 +75,11 @@ export default async function ModuleDetailPage({
       {topicsRes.error ? (
         <p className="text-sm text-mastery-weak">Could not load topics. Try refreshing.</p>
       ) : topics.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-line p-8 text-center">
-          <p className="text-sm text-muted">No topics yet. Add your first one to get started.</p>
-        </div>
+        <EmptyState
+          message="Topics break your module down into chapters or weeks. Add your first topic to start attaching notes and practice questions."
+          actionLabel="Create your first topic"
+          actionHref={`/modules/${id}/topics/new`}
+        />
       ) : (
         <ul className="paper animate-rise-in divide-y divide-line/70 overflow-hidden rounded-lg border border-line/70 bg-card">
           {topics.map((t) => (

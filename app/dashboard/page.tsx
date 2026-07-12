@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTopicAccuracy, getRecommendedQuestion } from "@/lib/recommender";
 import { getDueReviewCount } from "@/app/review/actions";
+import { getOnboardingStatus } from "@/app/actions/onboarding";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import GettingStarted from "@/components/getting-started";
 import { MasteryDot, masteryTone, type MasteryTone } from "@/components/mastery-dot";
 
 // Small hand-drawn icon set for the KPI strip - kept local to this file
@@ -67,6 +69,7 @@ export default async function DashboardPage() {
     questionCount,
     attemptCount,
     recentAttempts,
+    onboardingStatus,
   ] = await Promise.all([
     getTopicAccuracy(supabase),
     getRecommendedQuestion(supabase),
@@ -79,6 +82,7 @@ export default async function DashboardPage() {
       .select("attempted_at")
       .gte("attempted_at", dayStart.toISOString())
       .then((r) => r.data ?? []),
+    getOnboardingStatus(),
   ]);
 
   const weakTopics = topicStats.filter((t) => t.is_weak);
@@ -154,6 +158,12 @@ export default async function DashboardPage() {
       <h1 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
         Welcome back, <em>{firstName}</em>
       </h1>
+
+      {/* Spencer's Day 3 onboarding checklist - renders only until all
+          four steps are done, so established accounts never see it. */}
+      <div className="mt-6">
+        <GettingStarted status={onboardingStatus} />
+      </div>
 
       {/* KPI strip - a real account snapshot, six independent numbers.
           A stat is not a card: these sit bare on the desk surface, big

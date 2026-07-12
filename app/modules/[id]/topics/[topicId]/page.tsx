@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { deleteSubtopic } from "./subtopics/[subtopicId]/edit/actions";
 import { DeleteButton } from "@/components/DeleteButton";
+import EmptyState from "@/components/empty-state";
 
 export default async function TopicDetailPage({
   params,
@@ -46,7 +47,11 @@ export default async function TopicDetailPage({
           </Link>
         </div>
         {subtopics.length === 0 ? (
-          <p className="text-muted text-sm">No subtopics yet.</p>
+          <EmptyState
+            message="Subtopics help you break down complex material. Add one to keep your notes organized."
+            actionLabel="Add subtopic"
+            actionHref={`/modules/${moduleId}/topics/${topicId}/subtopics/new`}
+          />
         ) : (
           <ul className="space-y-2">
             {subtopics.map((s) => (
@@ -79,7 +84,11 @@ export default async function TopicDetailPage({
           </Link>
         </div>
         {notes.length === 0 ? (
-          <p className="text-muted text-sm">No notes yet.</p>
+          <EmptyState
+            message="Notes are the foundation of your learning. Add your material here so NoteFlow can generate questions for you."
+            actionLabel="Add note"
+            actionHref={`/modules/${moduleId}/topics/${topicId}/notes/new`}
+          />
         ) : (
           <ul className="space-y-2">
             {notes.map((n) => (
@@ -116,7 +125,11 @@ export default async function TopicDetailPage({
           </div>
         </div>
         {questions.length === 0 ? (
-          <p className="text-muted text-sm">No questions yet.</p>
+          <EmptyState
+            message="Questions test your mastery. Write your own or let NoteFlow generate them from your notes."
+            actionLabel="Add question"
+            actionHref={`/modules/${moduleId}/topics/${topicId}/questions/new`}
+          />
         ) : (
           <>
             <ul className="space-y-2 mb-3">

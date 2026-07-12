@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDueReviews } from "./actions";
 import ReviewSession from "./review-session";
+import EmptyState from "@/components/empty-state";
 
 export default async function ReviewPage() {
   const supabase = await createClient();
@@ -14,12 +15,22 @@ export default async function ReviewPage() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="font-display text-2xl font-semibold text-ink">Review</h1>
-      <p className="mt-1 text-sm text-muted">
-        {due.length === 0
-          ? "Nothing due - answering quiz questions schedules them for review at growing intervals."
-          : `${due.length} question${due.length === 1 ? "" : "s"} due for review.`}
-      </p>
-      {due.length > 0 && <ReviewSession initialQueue={due} />}
+      {due.length === 0 ? (
+        <div className="mt-4">
+          <EmptyState
+            message="You're all caught up! Take a quiz to add questions to your review schedule."
+            actionLabel="Explore modules"
+            actionHref="/modules"
+          />
+        </div>
+      ) : (
+        <>
+          <p className="mt-1 text-sm text-muted tabular-nums">
+            {due.length} question{due.length === 1 ? "" : "s"} due for review.
+          </p>
+          <ReviewSession initialQueue={due} />
+        </>
+      )}
     </main>
   );
 }

@@ -6,6 +6,7 @@ import { deleteNote } from "./actions";
 import { DeleteButton } from "@/components/DeleteButton";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function NoteViewPage({
   params,
@@ -22,7 +23,8 @@ export default async function NoteViewPage({
 
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
-      <div className="flex items-center justify-between mb-4">
+      <Breadcrumbs moduleId={moduleId} topicId={topicId} />
+      <div className="mt-4 flex items-center justify-between mb-4">
         <h1 className="font-display text-2xl font-semibold text-ink">{note.title}</h1>
         <div className="flex gap-2">
           <Link

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { getModuleGraph } from "./actions";
 import GraphView from "./graph-view";
+import EmptyState from "@/components/empty-state";
 
 // Server shell: RLS + .single() confirms ownership and 404s missing rows,
 // then the graph is fetched once so the client component starts with
@@ -36,9 +37,13 @@ export default async function ConceptGraphPage({
       </p>
 
       {graph.topics.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">
-          Add topics to this module before mapping how they depend on each other.
-        </p>
+        <div className="mt-6">
+          <EmptyState
+            message="Add topics to this module before mapping how they depend on each other."
+            actionLabel="Add your first topic"
+            actionHref={`/modules/${id}/topics/new`}
+          />
+        </div>
       ) : (
         <GraphView moduleId={id} initialGraph={graph} />
       )}
