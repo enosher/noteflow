@@ -36,12 +36,12 @@ export default function LoginPage() {
       {/* Two sibling forms, not one - the demo button posts to a server
           action and can't legally nest inside the credentials form. */}
       <div className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-bold text-center">Log in</h1>
+        <h1 className="text-center text-2xl font-bold text-ink">Log in</h1>
 
         <form action={demoLogin}>
           <SubmitButton
             pendingText="Signing in..."
-            className="w-full rounded-md bg-brand px-4 py-2 font-medium text-card"
+            className="w-full rounded-md bg-brand px-4 py-2 font-medium text-white transition-opacity hover:opacity-80"
           >
             Try the demo
           </SubmitButton>
@@ -63,7 +63,7 @@ export default function LoginPage() {
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md"
+            className="w-full rounded-md border border-line bg-transparent px-4 py-2 text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
 
           <input
@@ -72,24 +72,24 @@ export default function LoginPage() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-md"
+            className="w-full rounded-md border border-line bg-transparent px-4 py-2 text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-md bg-brand px-4 py-2 text-white transition-opacity hover:opacity-80 disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Log in'}
           </button>
 
           {error && (
-            <div className="text-sm text-center text-red-600">{error}</div>
+            <div className="text-center text-sm text-red-500">{error}</div>
           )}
 
-          <p className="text-sm text-center text-gray-600">
+          <p className="text-center text-sm text-muted">
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="text-blue-600 underline">
+            <Link href="/signup" className="text-brand hover:underline">
               Sign up
             </Link>
           </p>

@@ -4,12 +4,6 @@ import Link from "next/link";
 import { loadSampleData } from "./sample-data-actions";
 import EmptyState from "@/components/empty-state";
 
-/**
- * ModulesPage - lists all modules belonging to the signed-in user.
- *
- * Server component, no client JS needed. RLS on `modules` scopes the
- * query to auth.uid() automatically, so no manual user_id filter.
- */
 export default async function ModulesPage() {
   const supabase = await createClient();
 
@@ -18,9 +12,6 @@ export default async function ModulesPage() {
     .select("id, code, name, description, created_at")
     .order("created_at", { ascending: false });
 
-  // If Supabase returns an error (e.g. network issue, RLS misconfiguration),
-  // show a plain message rather than crashing. Will be replaced with a
-  // proper error UI in Week 4 polish pass.
   if (error) {
     console.error("[ModulesPage] Failed to load modules:", error.message);
     return (
