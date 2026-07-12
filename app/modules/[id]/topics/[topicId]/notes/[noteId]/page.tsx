@@ -6,6 +6,7 @@ import { deleteNote } from "./actions";
 import { DeleteButton } from "@/components/DeleteButton";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default async function NoteViewPage({
   params,
@@ -21,13 +22,16 @@ export default async function NoteViewPage({
   const fileUrl = note.file_url ? await getSignedNoteFileUrl(note.file_url) : null;
 
   return (
-    <main className="p-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">{note.title}</h1>
+    <main className="mx-auto max-w-2xl p-6">
+      {/* Added Breadcrumbs for Day 3 Orientation Completeness */}
+      <Breadcrumbs moduleId={moduleId} topicId={topicId} />
+
+      <div className="mb-4 mt-4 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-ink">{note.title}</h1>
         <div className="flex gap-2">
           <Link
             href={`/modules/${moduleId}/topics/${topicId}/notes/${noteId}/edit`}
-            className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            className="rounded-md border border-line px-3 py-1.5 text-sm text-ink transition-colors hover:bg-line/20"
           >
             Edit
           </Link>
@@ -36,15 +40,15 @@ export default async function NoteViewPage({
       </div>
 
       {fileUrl && (
-        <p className="mb-4 text-sm">
+        <p className="mb-4 text-sm text-muted">
           📎{" "}
-          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-brand transition-opacity hover:opacity-80 hover:underline">
             Attached file
           </a>
         </p>
       )}
 
-      <div className="text-sm">
+      <div className="text-sm text-ink">
         <ReactMarkdown>{note.content ?? ""}</ReactMarkdown>
       </div>
     </main>

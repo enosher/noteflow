@@ -33,7 +33,7 @@ export default function SignupPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-8">
       <form onSubmit={handleSignup} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-bold text-center">Create account</h1>
+        <h1 className="text-center text-2xl font-bold text-ink">Create account</h1>
 
         <input
           type="email"
@@ -41,7 +41,7 @@ export default function SignupPage() {
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          className="w-full px-4 py-2 border border-gray-300 rounded-md"
+          className="w-full rounded-md border border-line bg-transparent px-4 py-2 text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         />
 
         <input
@@ -51,26 +51,26 @@ export default function SignupPage() {
           onChange={e => setPassword(e.target.value)}
           required
           minLength={6}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md"
+          className="w-full rounded-md border border-line bg-transparent px-4 py-2 text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
         />
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="w-full rounded-md bg-brand px-4 py-2 text-white transition-opacity hover:opacity-80 disabled:opacity-50"
         >
           {loading ? 'Creating...' : 'Sign up'}
         </button>
 
         {message && (
-          <div className={`text-sm text-center ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+          <div className={`text-center text-sm ${message.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
             {message.text}
           </div>
         )}
 
-        <p className="text-sm text-center text-gray-600">
+        <p className="text-center text-sm text-muted">
           Already have an account?{' '}
-          <Link href="/login" className="text-blue-600 underline">
+          <Link href="/login" className="text-brand hover:underline">
             Log in
           </Link>
         </p>

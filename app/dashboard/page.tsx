@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getTopicAccuracy, getRecommendedQuestion } from "@/lib/recommender";
+import { getOnboardingStatus } from "@/app/actions/onboarding";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { MasteryDot } from "@/components/mastery-dot";
+import GettingStarted from "@/components/getting-started";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -11,28 +13,30 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // Both of these touch quiz_attempts/questions under the hood. Running
-  // them in parallel instead of two sequential awaits means the page
-  // doesn't get slower as a student's attempt history grows.
-  const [topicStats, recommendation] = await Promise.all([
+  // Fetch everything in parallel
+  const [topicStats, recommendation, onboardingStatus] = await Promise.all([
     getTopicAccuracy(supabase),
     getRecommendedQuestion(supabase),
+    getOnboardingStatus(),
   ]);
 
   const weakTopics = topicStats.filter((t) => t.is_weak);
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
+    <main className="mx-auto max-w-3xl p-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
-        <p className="text-muted mt-1">Welcome, {user.email}</p>
+        <p className="mt-1 text-muted">Welcome, {user.email}</p>
       </div>
+
+      {/* NEW: Getting Started Checklist */}
+      <GettingStarted status={onboardingStatus} />
 
       {/* Weak topics - the "Track" feature's headline output */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-3 text-ink">Weak topics</h2>
+        <h2 className="mb-3 text-lg font-semibold text-ink">Weak topics</h2>
         {weakTopics.length === 0 ? (
-          <p className="text-muted text-sm">
+          <p className="text-sm text-muted">
             {topicStats.length === 0
               ? "No quiz attempts yet - take a quiz to see your weak topics here."
               : "No weak topics flagged yet - keep going!"}
@@ -42,11 +46,11 @@ export default async function DashboardPage() {
             {weakTopics.map((t) => (
               <li
                 key={t.topic_id}
-                className="rounded-md border border-amber-300 bg-amber-50 p-3 flex items-center justify-between text-sm"
+                className="flex items-center justify-between rounded-md border border-amber-300 bg-amber-50 p-3 text-sm"
               >
                 <Link
                   href={`/modules/${t.module_id}/topics/${t.topic_id}`}
-                  className="font-medium text-amber-900! hover:underline"
+                  className="font-medium !text-amber-900 hover:underline"
                 >
                   {t.topic_name}
                 </Link>
@@ -61,13 +65,13 @@ export default async function DashboardPage() {
 
       {/* Accuracy by topic - full table, not just the weak ones */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold mb-3 text-ink">Accuracy by topic</h2>
+        <h2 className="mb-3 text-lg font-semibold text-ink">Accuracy by topic</h2>
         {topicStats.length === 0 ? (
-          <p className="text-muted text-sm">Nothing recorded yet.</p>
+          <p className="text-sm text-muted">Nothing recorded yet.</p>
         ) : (
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="text-left border-b border-line">
+              <tr className="border-b border-line text-left">
                 <th className="py-2 font-medium text-muted">Topic</th>
                 <th className="py-2 font-medium text-muted">Accuracy</th>
                 <th className="py-2 font-medium text-muted">Attempts</th>
@@ -93,7 +97,7 @@ export default async function DashboardPage() {
 
       {/* Recommendation - the "Adapt" feature */}
       <section>
-        <h2 className="text-lg font-semibold mb-3 text-ink">Recommended next</h2>
+        <h2 className="mb-3 text-lg font-semibold text-ink">Recommended next</h2>
         {recommendation ? (
           <div className="rounded-lg border border-line bg-card p-4 shadow-sm">
             <p className="mb-1 text-xs uppercase tracking-wide text-muted">
@@ -108,7 +112,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <p className="text-muted text-sm">
+          <p className="text-sm text-muted">
             Add some questions and take a quiz to get a recommendation.
           </p>
         )}
