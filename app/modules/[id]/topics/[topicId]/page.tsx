@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { deleteSubtopic } from "./subtopics/[subtopicId]/edit/actions";
 import { DeleteButton } from "@/components/DeleteButton";
+import EmptyState from "@/components/empty-state";
 
 export default async function TopicDetailPage({
   params,
@@ -28,34 +29,38 @@ export default async function TopicDetailPage({
   const questions = questionsRes.data ?? [];
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
+    <main className="mx-auto max-w-3xl p-6">
       <Breadcrumbs moduleId={moduleId} topicId={topicId} />
 
-      <h1 className="text-2xl font-bold mb-2">{topic.name}</h1>
-      {topic.description && <p className="text-gray-700 mb-6">{topic.description}</p>}
+      <h1 className="mb-2 text-2xl font-bold text-ink">{topic.name}</h1>
+      {topic.description && <p className="mb-6 text-muted">{topic.description}</p>}
 
       {/* Subtopics */}
       <section className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Subtopics</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-ink">Subtopics</h2>
           <Link
             href={`/modules/${moduleId}/topics/${topicId}/subtopics/new`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
           >
             + New subtopic
           </Link>
         </div>
         {subtopics.length === 0 ? (
-          <p className="text-gray-600 text-sm">No subtopics yet.</p>
+          <EmptyState
+            message="Subtopics help you break down complex material. Add one to keep your notes organized."
+            actionLabel="Add subtopic"
+            actionHref={`/modules/${moduleId}/topics/${topicId}/subtopics/new`}
+          />
         ) : (
           <ul className="space-y-2">
             {subtopics.map((s) => (
-              <li key={s.id} className="rounded-md border p-3 text-sm flex items-center justify-between hover:bg-gray-50">
-                <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="flex-1 flex items-center gap-3 group">
-                  <span className="group-hover:text-blue-600 group-hover:underline">{s.name}</span>
-                  <span className="text-gray-300 group-hover:text-blue-400">›</span>
+              <li key={s.id} className="flex items-center justify-between rounded-md border border-line bg-card p-3 text-sm transition-colors hover:border-brand/30 hover:shadow-sm">
+                <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="group flex flex-1 items-center gap-3">
+                  <span className="text-ink transition-colors group-hover:text-brand group-hover:underline">{s.name}</span>
+                  <span className="text-muted transition-colors group-hover:text-brand">›</span>
                 </Link>
-                <div className="flex gap-2 ml-4">
+                <div className="ml-4 flex gap-2">
                   <DeleteButton
                     action={deleteSubtopic.bind(null, s.id)}
                     confirmMessage="Delete this subtopic?"
@@ -69,24 +74,28 @@ export default async function TopicDetailPage({
 
       {/* Notes */}
       <section className="mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Notes</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-ink">Notes</h2>
           <Link
             href={`/modules/${moduleId}/topics/${topicId}/notes/new`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
           >
             + New note
           </Link>
         </div>
         {notes.length === 0 ? (
-          <p className="text-gray-600 text-sm">No notes yet.</p>
+          <EmptyState
+            message="Notes are the foundation of your learning. Add your material here so NoteFlow can generate questions for you."
+            actionLabel="Add note"
+            actionHref={`/modules/${moduleId}/topics/${topicId}/notes/new`}
+          />
         ) : (
           <ul className="space-y-2">
             {notes.map((n) => (
-              <li key={n.id} className="rounded-md border p-3 text-sm hover:bg-gray-50">
-                <Link href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`} className="flex items-center gap-3 group">
-                  <span className="flex-1 group-hover:text-blue-600 group-hover:underline">{n.title}</span>
-                  <span className="text-gray-300 group-hover:text-blue-400">›</span>
+              <li key={n.id} className="rounded-md border border-line bg-card p-3 text-sm transition-colors hover:border-brand/30 hover:shadow-sm">
+                <Link href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`} className="group flex items-center gap-3">
+                  <span className="flex-1 text-ink transition-colors group-hover:text-brand group-hover:underline">{n.title}</span>
+                  <span className="text-muted transition-colors group-hover:text-brand">›</span>
                 </Link>
               </li>
             ))}
@@ -96,43 +105,47 @@ export default async function TopicDetailPage({
 
       {/* Questions */}
       <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Questions</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-ink">Questions</h2>
           <div className="flex items-center gap-4">
             {/* Drafts from this topic's notes via Gemini; nothing saves
                 until the review screen - see questions/generate. */}
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/questions/generate`}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
             >
               Generate questions
             </Link>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/questions/new`}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
             >
               + New question
             </Link>
           </div>
         </div>
         {questions.length === 0 ? (
-          <p className="text-gray-600 text-sm">No questions yet.</p>
+          <EmptyState
+            message="Questions test your mastery. Write your own or let NoteFlow generate them from your notes."
+            actionLabel="Add question"
+            actionHref={`/modules/${moduleId}/topics/${topicId}/questions/new`}
+          />
         ) : (
           <>
-            <ul className="space-y-2 mb-3">
+            <ul className="mb-4 space-y-2">
               {questions.map((q) => (
-                <li key={q.id} className="rounded-md border p-3 text-sm flex items-center justify-between hover:bg-gray-50">
-                  <Link href={`/modules/${moduleId}/topics/${topicId}/questions/${q.id}/edit`} className="flex-1 flex items-center gap-3 group">
-                    <span className="flex-1 group-hover:text-blue-600 group-hover:underline">{q.prompt}</span>
-                    <span className="text-gray-300 group-hover:text-blue-400">›</span>
+                <li key={q.id} className="flex items-center justify-between rounded-md border border-line bg-card p-3 text-sm transition-colors hover:border-brand/30 hover:shadow-sm">
+                  <Link href={`/modules/${moduleId}/topics/${topicId}/questions/${q.id}/edit`} className="group flex flex-1 items-center gap-3">
+                    <span className="flex-1 text-ink transition-colors group-hover:text-brand group-hover:underline">{q.prompt}</span>
+                    <span className="text-muted transition-colors group-hover:text-brand">›</span>
                   </Link>
-                  <span className="text-gray-500 ml-4 shrink-0">Difficulty {q.difficulty}</span>
+                  <span className="ml-4 shrink-0 text-muted">Difficulty {q.difficulty}</span>
                 </li>
               ))}
             </ul>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/quiz`}
-              className="inline-block rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-sm"
+              className="inline-block rounded-md bg-brand px-4 py-2 text-sm text-white transition-opacity hover:opacity-80"
             >
               Start quiz
             </Link>

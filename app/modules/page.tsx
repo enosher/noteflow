@@ -2,6 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { loadSampleData } from "./sample-data-actions";
+import EmptyState from "@/components/empty-state";
 
 /**
  * ModulesPage - lists all modules belonging to the signed-in user.
@@ -24,8 +25,8 @@ export default async function ModulesPage() {
     console.error("[ModulesPage] Failed to load modules:", error.message);
     return (
       <main className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Modules</h1>
-        <p className="text-red-600 text-sm">
+        <h1 className="mb-4 text-2xl font-bold text-ink">Modules</h1>
+        <p className="text-sm text-red-500">
           Could not load modules. Try refreshing the page.
         </p>
       </main>
@@ -33,13 +34,13 @@ export default async function ModulesPage() {
   }
 
   return (
-    <main className="p-6 max-w-2xl">
+    <main className="mx-auto max-w-2xl p-6">
       {/* Header row: title + primary action */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Modules</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-ink">Modules</h1>
         <Link
           href="/modules/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          className="rounded-md bg-brand px-4 py-2 text-sm text-white transition-opacity hover:opacity-80"
         >
           + New module
         </Link>
@@ -47,24 +48,19 @@ export default async function ModulesPage() {
 
       {/* Empty state - shown on first login before any modules exist */}
       {modules.length === 0 ? (
-        <div className="rounded-md border border-dashed border-gray-300 p-8 text-center">
-          <p className="text-gray-500 text-sm">No modules yet.</p>
-          <p className="text-gray-400 text-sm mt-1">
-            Create your first module to start organising your notes.
-          </p>
-          <Link
-            href="/modules/new"
-            className="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-          >
-            Create module
-          </Link>
+        <div className="space-y-4">
+          <EmptyState 
+            message="Your modules organise everything — notes, questions, and quiz history live inside them."
+            actionLabel="Create your first module"
+            actionHref="/modules/new"
+          />
           {/* Escape hatch from a blank first run: pulls in two ready-made
               modules with weeks of quiz history so Track/Adapt are visible
               without the user having to generate that history by hand. */}
-          <form action={loadSampleData} className="mt-3">
+          <form action={loadSampleData} className="text-center">
             <button
               type="submit"
-              className="text-sm text-blue-600 underline underline-offset-2 hover:text-blue-700"
+              className="text-sm text-brand underline underline-offset-2 transition-opacity hover:opacity-80"
             >
               Or load sample data to explore first
             </button>
@@ -77,17 +73,17 @@ export default async function ModulesPage() {
             <li key={m.id}>
               <Link
                 href={`/modules/${m.id}`}
-                className="flex items-start justify-between rounded-md border p-4 hover:bg-gray-50 transition-colors"
+                className="flex items-start justify-between rounded-md border border-line bg-card p-4 transition-colors hover:border-brand/30 hover:shadow-sm"
               >
                 <div>
-                  <span className="font-semibold text-sm">{m.code}</span>
-                  <span className="text-gray-400 text-sm ml-4">&#8250;</span>
+                  <span className="text-sm font-semibold text-ink">{m.code}</span>
+                  <span className="ml-4 text-sm text-muted">&#8250;</span>
                   {m.description && (
-                    <p className="text-gray-400 text-xs mt-1">{m.description}</p>
+                    <p className="mt-1 text-xs text-muted">{m.description}</p>
                   )}
                 </div>
                 {/* Chevron gives a visual affordance that the row is clickable */}
-                <span className="text-gray-400 text-sm ml-4">›</span>
+                <span className="ml-4 text-sm text-muted">›</span>
               </Link>
             </li>
           ))}
