@@ -11,24 +11,29 @@ A web app that helps university students organise study materials by topic, trac
 
 ## Table of Contents
 
-- [Motivation](#motivation)
-- [Aim](#aim)
-- [User Stories](#user-stories)
-- [Features](#features)
-- [Planned for Milestone 3](#planned-for-milestone-3)
-- [System Design](#system-design)
-- [Recommendation Algorithm](#recommendation-algorithm)
-- [Implementation Challenges](#implementation-challenges)
-- [Why NoteFlow Instead of ChatGPT](#why-noteflow-instead-of-chatgpt)
-- [Tech Stack](#tech-stack)
-- [Development Plan](#development-plan)
-- [Software Engineering Practices](#software-engineering-practices)
-- [Project Management](#project-management)
-- [Testing](#testing)
-- [User Testing](#user-testing)
-- [Screenshots](#screenshots)
-- [Setup Instructions](#setup-instructions)
-- [Known Limitations](#known-limitations)
+1. [Targeted Level of Achievement](#targeted-level-of-achievement)
+2. [Team](#team)
+3. [Motivation](#motivation)
+4. [Aim](#aim)
+5. [User Stories](#user-stories)
+6. [Features](#features)
+7. [Spaced Repetition](#spaced-repetition)
+8. [Concept Graph](#concept-graph)
+9. [AI Question Generation](#ai-question-generation)
+10. [System Design](#system-design)
+11. [Recommendation Algorithm](#recommendation-algorithm)
+12. [Implementation Challenges](#implementation-challenges)
+13. [Why NoteFlow Instead of ChatGPT](#why-noteflow-instead-of-chatgpt)
+14. [Tech Stack](#tech-stack)
+15. [Development Plan](#development-plan)
+16. [Software Engineering Practices](#software-engineering-practices)
+17. [Project Management](#project-management)
+18. [Testing](#testing)
+19. [User Testing](#user-testing)
+20. [Screenshots](#screenshots)
+21. [Setup Instructions](#setup-instructions)
+22. [Known Limitations](#known-limitations)
+23. [Acknowledgements](#acknowledgements)
 
 ## Targeted Level of Achievement
 
@@ -61,7 +66,7 @@ NoteFlow is a web application that:
 
 1. Allows students to organise all study materials (notes, questions, links, summaries) in a structured hierarchy of modules, topics, and subtopics
 2. Records quiz attempts and tracks performance accuracy per topic over time
-3. Automatically identifies weak topics based on a student's quiz history
+3. Automatically identifies **weak topics** based on a student's quiz history
 4. Recommends targeted practice questions weighted by weak areas, recent mistakes, and revision frequency
 5. Provides a revision dashboard giving students a clear picture of their strengths, weaknesses, and progress
 
@@ -145,28 +150,70 @@ Unlike simple random practice, recommendations prioritise:
 
 For full details of the scoring model and design rationale, see the **Recommendation Algorithm** section below.
 
-## Planned for Milestone 3
+## Spaced Repetition
 
-### AI Question Generation
+NoteFlow uses a lightweight SM-2 scheduler for per-question review timing. For each `(user, question)` pair, the scheduler stores three pieces of state:
 
-- Generate additional practice questions from existing notes
-- Allow students to request more questions for specific weak topics
+- `easeFactor`: how easily the user is expected to remember the question. It starts at `2.5` and is floored at `1.3` so a difficult question never becomes mathematically unrecoverable.
+- `intervalDays`: how many days to wait before the next review. It remains `0` until the first successful review creates a real interval.
+- `repetitions`: the number of consecutive successful reviews for that question.
 
-### Spaced Repetition Review
+The quiz UI only records whether the answer was correct, so `qualityFromCorrect()` maps `correct -> 4` and `incorrect -> 2` on Wozniak's original 0-5 quality scale. This keeps the review flow frictionless while preserving the full SM-2 machinery internally. As recorded in the decisions log, "adding that tap after every question was judged too much friction for the quiz flow already in place. The 0-5 machinery stays intact underneath so a future 'that was easy' button could plug in a real quality value without changing nextReviewState's signature."
 
-- Implement SM-2 scheduling for long-term retention
-- Surface questions and notes based on review intervals
+On a successful review (`quality >= 3`), the repetition streak increases and the interval is updated as follows:
 
-### Concept Graph and Prerequisite Mapping
+- First successful repetition: `1` day
+- Second successful repetition: `6` days
+- Third and later successful repetitions: `round(previous interval x easeFactor)`
 
-- Visualise relationships between topics
-- Highlight prerequisite concepts before advanced topics are attempted
+The **ease factor** itself is updated using Wozniak's SM-2 formula and then floored at `1.3`.
+
+On a failed review (`quality < 3`), NoteFlow resets the streak rather than the difficulty estimate: `repetitions` becomes `0`, `intervalDays` becomes `1`, and `easeFactor` is left untouched. The decisions log explicitly calls this "the easy detail to get backwards" because a failure should make the item due soon again without erasing the long-term ease estimate already learned for that question.
+
+Spaced repetition and the adaptive recommender solve related but different problems. The SM-2 review queue answers "what is due today" using per-question time-based scheduling. The recommender answers "what should I drill" using topic weakness, recent mistakes, recency, and difficulty. This distinction was raised as a possible Milestone 1 criticism — "isn't spaced repetition redundant with the recommender?" — and resolved as an implemented design separation rather than an assumption.
+
+## Concept Graph
+
+The concept graph models prerequisite relationships between topics. Edges are stored in the `topic_prerequisites` table as `(topic_id, prerequisite_topic_id)` pairs and are created by users through the graph UI. NoteFlow does not auto-extract prerequisite links from notes or question text.
+
+Prerequisite edges are currently constrained to topics within the same module. This is enforced by a database trigger because a normal `CHECK` constraint cannot join against the `topics` table to compare both endpoints' `module_id` values. Cross-module prerequisites are a real concept, but they were deliberately kept out of scope for this milestone.
+
+Cycles are rejected before they can enter the database. Before inserting a new edge, `wouldCreateCycle()` runs a breadth-first search from the proposed prerequisite's own prerequisites back toward the target topic. If the proposed write would make a topic depend on itself directly or indirectly, the insert is rejected with a clear error. This keeps the graph acyclic at write time instead of tolerating bad data and trying to recover at read time.
+
+The graph also feeds into recommendations. If a question's topic sits behind a weak prerequisite, its recommender score is multiplied by `0.5` rather than being excluded completely. The weak-prerequisite definition is the same as the rest of the app: accuracy below `0.6` with at least `3` attempts. Unattempted prerequisites never block a topic, so a fresh module does not feel broken on the first click. This penalty is applied after `getScoreBreakdown`, which means the four displayed scoring terms still sum to `breakdown.total` and remain easy to inspect.
+
+LLM-based relationship extraction was considered but consciously descoped. The milestone goal was to make prerequisite mapping reliable and inspectable first, so user-defined edges were chosen over automatically inferred relationships.
+
+The graph layout is implemented as a hand-rolled force simulation in `lib/graph-layout.ts`, without adding `d3-force` or `react-flow`. Physics can move nodes vertically and spread them out, but each node's x-position stays pinned to its topological level. The guaranteed property is that prerequisites always render strictly to the left of their dependents, matching the left-to-right reading order of prerequisite knowledge. A unit test pins this behaviour by checking that a prerequisite remains strictly left of its dependent after the simulation settles.
+
+## AI Question Generation
+
+AI question generation is implemented as a draft-and-review workflow rather than a direct write into the question bank. Several controls are applied before a generated item can become a saved question.
+
+First, generation is restricted to `mcq` and `short_answer` questions through `VALID_TYPES`. `long_answer` is permanently excluded because the current `submitAnswer()` flow auto-grades every long-answer attempt as correct. Allowing AI-generated long-answer questions would therefore quietly inflate topic accuracy statistics.
+
+Second, the Gemini request asks for structured JSON using `responseMimeType: "application/json"` and a `responseSchema`, but this is treated only as a request-time hint. `parseGenerated()` never trusts the model response simply because it was schema-constrained; it parses and validates the returned data independently.
+
+Third, `isValidDraft()` validates each draft before it is shown or saved. A valid draft must have a prompt of at least 10 trimmed characters, a non-empty answer, an integer difficulty from `1` to `5`, and a supported question type. MCQ drafts must also contain at least two non-blank options, and the answer must match one of those options verbatim.
+
+Fourth, validation runs again immediately before insertion. This matters because users can edit generated drafts in the review UI; a draft that was valid when parsed can become invalid if, for example, the answer is edited so it no longer matches any MCQ option.
+
+Fifth, duplicate detection uses Jaccard token-overlap similarity with a `0.8` threshold. The check runs against both the topic's existing questions and the rest of the same generated batch. This catches trivial rephrasings that exact string matching would miss.
+
+Malformed generated items are dropped individually at parse time, so one bad item produces one fewer draft rather than failing the entire batch. Only structural failures, such as unparseable JSON or a non-array root, throw an error for the whole generation attempt.
+
+Finally, AI generation is protected by a shared daily cap of `40` generation calls per 24 hours. This prevents one enthusiastic tester from exhausting the quota for the single shared `GEMINI_API_KEY` used by the deployment.
+
+The `questions.source` field records whether a saved question came from `manual` entry or `ai` generation. It was added for future provenance tracking, but the current codebase does not query or display an accept rate. There is therefore no accept-rate number to report yet.
 
 ## System Design
 
 ### Architecture
 
+The diagram below outlines NoteFlow's high-level architecture (see Figure 1).
+
 ![Architecture Diagram](docs/images/architecture.svg)
+*Figure 1: Architecture Diagram*
 
 NoteFlow uses a full-stack Next.js architecture with Supabase as the database and authentication layer.
 
@@ -178,7 +225,10 @@ Milestone 2 expanded the architecture from an authentication prototype into a da
 
 ### Page Flow
 
+The diagram below maps the application's page and route flow (see Figure 2).
+
 ![Page Flow](docs/images/page-flow.svg)
+*Figure 2: Page Flow*
 
 The Milestone 2 application includes authentication, dashboard, hierarchy management, note, question, quiz, and recommendation flows. Representative routes include:
 
@@ -198,21 +248,28 @@ The Milestone 2 application includes authentication, dashboard, hierarchy manage
 
 ### Database Schema
 
-![ER Diagram](docs/images/er-diagram.svg)
+The entity-relationship diagram below shows the full schema (see Figure 3).
 
-The database schema is fully implemented and deployed on Supabase. All application tables are protected using Row Level Security (RLS) policies scoped to `auth.uid()`, ensuring users can only access their own data.
+![ER Diagram](docs/images/er-diagram.svg)
+*Figure 3: ER Diagram*
+
+The database schema is fully implemented and deployed on Supabase. All application tables are protected using **Row Level Security (RLS)** policies scoped to `auth.uid()`, ensuring users can only access their own data.
 
 Child tables do not carry a `user_id` column directly; ownership is enforced by joining up the hierarchy to `modules.user_id`. This keeps the schema normalised and avoids update anomalies at the cost of slightly more complex RLS policy definitions.
 
 The main tables are:
 
-**profiles** - extends Supabase auth.users
+#### profiles
+
+extends Supabase auth.users
 - `id` (UUID, primary key, references auth.users)
 - `display_name` (text, nullable)
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
 
-**modules** - academic unit (e.g. CS2030)
+#### modules
+
+academic unit (e.g. CS2030)
 - `id` (UUID, primary key)
 - `user_id` (UUID, foreign key -> profiles)
 - `code` (text, e.g. "CS2030")
@@ -221,7 +278,9 @@ The main tables are:
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
 
-**topics** - within a module
+#### topics
+
+within a module
 - `id` (UUID, primary key)
 - `module_id` (UUID, foreign key -> modules)
 - `name` (text)
@@ -230,7 +289,9 @@ The main tables are:
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
 
-**subtopics** - within a topic
+#### subtopics
+
+within a topic
 - `id` (UUID, primary key)
 - `topic_id` (UUID, foreign key -> topics)
 - `name` (text)
@@ -238,7 +299,8 @@ The main tables are:
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
 
-**notes**
+#### notes
+
 - `id` (UUID, primary key)
 - `topic_id` (UUID, foreign key -> topics, nullable)
 - `subtopic_id` (UUID, foreign key -> subtopics, nullable)
@@ -250,7 +312,8 @@ The main tables are:
 
 Notes must be attached to exactly one parent - either a topic or a subtopic, never both and never neither. This is enforced by a check constraint (`notes_exactly_one_parent`).
 
-**questions**
+#### questions
+
 - `id` (UUID, primary key)
 - `topic_id` (UUID, foreign key -> topics)
 - `subtopic_id` (UUID, foreign key -> subtopics, nullable)
@@ -262,7 +325,8 @@ Notes must be attached to exactly one parent - either a topic or a subtopic, nev
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
 
-**quiz_attempts**
+#### quiz_attempts
+
 - `id` (UUID, primary key)
 - `user_id` (UUID, foreign key -> profiles)
 - `question_id` (UUID, foreign key -> questions)
@@ -505,7 +569,7 @@ All decisions are documented in `docs/decisions-log.md`.
 
 ## Testing
 
-NoteFlow includes 19 automated unit tests written using Vitest.
+NoteFlow includes 114 automated tests written using Vitest across 6 test files.
 
 ### Weak Topic Detection Tests (5 tests)
 
@@ -518,7 +582,7 @@ A topic is considered weak only when:
 
 The tests specifically verify edge cases such as a topic with 0% accuracy but only two attempts, ensuring that isolated mistakes do not incorrectly classify a topic as weak. They also test the threshold boundary where exactly 60% accuracy is not considered weak, while values below 60% are.
 
-### Recommendation Algorithm Tests (14 tests)
+### Recommendation Algorithm Tests (18 tests)
 
 `lib/recommender.test.ts` verifies each recommendation component independently:
 
@@ -531,9 +595,31 @@ Additional tests verify composite recommendation scoring and the score-breakdown
 
 The invariant test ensures that the value returned by `getScoreBreakdown` always sums to the same total score returned by `scoreQuestion`. This protects against future maintenance bugs where the scoring implementation and debugging view could otherwise drift apart.
 
-The following shows the automated test run output:
+The following shows the automated test run output (see Figure 4):
 
 ![Vitest test run](docs/images/vitest-run.png)
+*Figure 4: Vitest test run*
+
+### Systematic Test Design
+
+The automated tests use two systematic test design techniques: equivalence partitioning and boundary value analysis. Equivalence partitioning groups inputs that should behave the same way, while boundary value analysis targets the exact threshold values where bugs commonly appear.
+
+Three representative examples show how this was applied:
+
+1. **Weak-topic detection** partitions topics by `{accuracy < 0.6, accuracy >= 0.6}` and `{attempts < 3, attempts >= 3}`. The boundary tests check exactly `0.6` accuracy and exactly `3` attempts, ensuring a topic is weak only when both conditions are satisfied.
+2. **SM-2 review scheduling** partitions quality values into `{quality < 3}` failure and `{quality >= 3}` success, with a boundary test at exactly `3`. It also tests the ease-factor floor at exactly `1.3` and the three interval regimes: first successful repetition, second successful repetition, and third-or-later successful repetition.
+3. **AI generation validation** partitions drafts into valid and invalid cases for each field. Boundary tests cover difficulty values `0`, `1`, `5`, and `6`, plus duplicate detection around the Jaccard threshold of `0.8`.
+
+| Function | Partitions | Boundaries | Test file |
+|---|---|---|---|
+| `isWeakTopic` | `{accuracy < 0.6, >= 0.6}` x `{attempts < 3, >= 3}` | Exactly `0.6`, exactly `3` | `weak-topics.test.ts` (5 tests) |
+| `scoreQuestion` / `getScoreBreakdown` | 4 independent term functions + composite score | Recency exactly 7 days (`>=` cutoff) | `recommender.test.ts` (18 tests) |
+| `nextReviewState` | Quality `{< 3 fail, >= 3 pass}`; interval regimes repetition 1 / repetition 2 / repetition >= 3 | Quality exactly `3` as pass floor; ease exactly `1.3` as floor | `sm2.test.ts` (10 tests) |
+| `wouldCreateCycle` / `blockedTopics` | Self-edge / chain / cycle; blocked vs unattempted prerequisite | Accuracy exactly `0.6`; attempts exactly `3` | `prereq.test.ts` (12 tests) |
+| `isValidDraft` / `isDuplicate` / `clampCount` | Valid/invalid per field; type allow-list | Difficulty `0` / `1` / `5` / `6`; Jaccard exactly `0.8`; count exactly `1` / `8` | `generated-questions.test.ts` (56 tests) |
+| `stepSimulation` / `graphBounds` | Coincident nodes; pinned vs free nodes | Settling threshold below `0.05` movement | `graph-layout.test.ts` (13 tests) |
+
+The current automated test suite contains 114 tests across these 6 files.
 
 ### Manual System Testing
 
@@ -561,44 +647,75 @@ Testers were given a shared task sheet, the NoteFlow User Testing Form, containi
 
 To address the navigation feedback, we added a chevron (`›`) and hover colour to topic, note, subtopic, and question cards so clickable cards are easier to recognise. The request for post-answer model answer display has been noted for Milestone 3, and the file upload interface will also be improved in Milestone 3 once the upload UI is built on top of the existing Supabase Storage schema.
 
+### Milestone 3 User Testing
+
+Spencer's planned 5-7 participant Milestone 3 testing round has not been run yet as of this documentation pass. This section is therefore intentionally left as a placeholder until recruiting, method, findings, and changes made can be reported from real data.
+
 ## Screenshots
 
-The deployed application is available at https://noteflow-liart.vercel.app. The screenshots below show the authentication flow from the initial proof of concept deployment.
+The deployed application is available at https://noteflow-liart.vercel.app. The screenshots below show the authentication flow from the initial proof of concept deployment (see Figures 5–8).
 
 ### Signup
 ![Signup](docs/images/poc-signup.png)
+*Figure 5: Signup*
 
 ### Login
 ![Login](docs/images/poc-login.png)
+*Figure 6: Login*
 
 ### Dashboard
 ![Dashboard](docs/images/poc-dashboard.png)
+*Figure 7: Dashboard*
 
 ### Logout
 ![After logout](docs/images/poc-logout.png)
-*Logging out redirects the user back to the login page.*
+*Figure 8: Logging out redirects the user back to the login page.*
 
 These screenshots demonstrate the authentication flow, session persistence across browser refreshes, and protected route redirection via middleware.
 
 ### M2 — Core features
 
 **Modules list**
+
+The module list is the default landing view after login, showing every module the student has created (see Figure 9).
+
 ![Modules list](docs/images/m2-modules-list.png)
+*Figure 9: Modules list*
 
 **Module detail — topics**
+
+Selecting a module opens its topic list, shown in Figure 10.
+
 ![Module detail](docs/images/m2-topic-detail.png)
+*Figure 10: Module detail*
 
 **Topic detail — subtopics, notes, and questions**
+
+A topic page surfaces its subtopics, notes, and questions together, as shown in Figure 11.
+
 ![Topic detail](docs/images/m2-subtopic.png)
+*Figure 11: Topic detail*
 
 **Quiz — answering a question**
+
+Figure 12 shows the quiz-taking flow while a question is being answered.
+
 ![Quiz answer](docs/images/m2-quiz-answer.png)
+*Figure 12: Quiz answer*
 
 **Quiz — results**
+
+After submission, results are shown immediately, as in Figure 13.
+
 ![Quiz results](docs/images/m2-quiz-results.png)
+*Figure 13: Quiz results*
 
 **Dashboard — weak topics, accuracy, and recommendation**
+
+The dashboard (Figure 14) surfaces weak-topic flags, per-topic accuracy, and the current recommendation.
+
 ![Dashboard](docs/images/m2-dashboard.png)
+*Figure 14: Dashboard*
 
 ## Setup Instructions
 - Credentials: demo@noteflow.app (password: noteflow)
@@ -639,7 +756,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-own-anon-key
    npx vitest run
 ```
 
-All 19 tests should pass.
+All 114 tests should pass.
 
 5. Run the development server:
 ```bash
@@ -653,8 +770,13 @@ All 19 tests should pass.
 - The database schema includes a `file_url` field and Supabase Storage integration, but a file upload user interface has not yet been implemented.
 - Email confirmation is disabled in Supabase for development simplicity.
 - No password reset flow has been implemented.
-- Some Supabase error messages are still displayed directly without user-friendly formatting.
+- Common Postgres error cases are now translated through `friendlyMessage()` and unexpected failures are caught by `app/error.tsx`, but less common error paths may still need more user-friendly, page-specific copy.
 - No rate limiting is currently applied to authentication endpoints.
+- Concept graph prerequisites are limited to topics within the same module. Cross-module prerequisite edges are recognised as useful but deferred.
+- Generated-question quality depends heavily on the completeness and clarity of the user's notes. If the notes are thin, there is no fallback source of trusted course content.
+- `long_answer` questions are still auto-marked correct in the quiz flow. AI generation excludes them, but manually created long-answer questions can still inflate accuracy statistics.
+- The app UI still needs a clear disclosure that the shared free-tier Gemini setup may allow Google to train on submitted study notes and generated outputs.
+- The shared AI-generation cap of 40 calls per 24 hours is enforced server-side, but there is no UI indicator showing remaining quota. A capped user currently sees only a generic failure message.
 
 ## Acknowledgements
 
