@@ -11,11 +11,11 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="mx-auto mt-24 max-w-md rounded-lg border border-[#C8D9F5] bg-[#FAFCFF] p-8 text-center">
-      <h2 className="text-lg font-semibold text-[#1A1A2E]">
+    <div className="mx-auto mt-24 max-w-md rounded-lg border border-line bg-card p-8 text-center">
+      <h2 className="text-lg font-semibold text-ink">
         Something went wrong
       </h2>
-      <p className="mt-2 text-sm text-[#5B6780]">
+      <p className="mt-2 text-sm text-muted">
         The action didn&apos;t complete. Your data is safe - try again, or go
         back to the dashboard.
         {error.digest && (
@@ -25,13 +25,13 @@ export default function Error({
       <div className="mt-6 flex justify-center gap-3">
         <button
           onClick={reset}
-          className="rounded bg-[#1B4AA0] px-4 py-2 text-sm text-white"
+          className="rounded bg-brand px-4 py-2 text-sm text-white"
         >
           Try again
         </button>
         <a
           href="/dashboard"
-          className="rounded border border-[#C8D9F5] px-4 py-2 text-sm text-[#1B4AA0]"
+          className="rounded border border-line px-4 py-2 text-sm text-brand"
         >
           Dashboard
         </a>
