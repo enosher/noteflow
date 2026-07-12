@@ -1,12 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --color-surface: #EDE8DF;   /* page background */
-  --color-card:    #FAFCFF;   /* raised boxes */
+  --color-surface: #EDE8DF;   /* page background - "the desk" */
+  --color-card:    #FDFCF7;   /* raised boxes - warmed from #FAFCFF so cards
+                                 read as paper on a desk rather than a cool
+                                 blue-white clashing with the cream surface */
   --color-ink:     #1A1A2E;   /* primary text */
-  --color-brand:   #1B4AA0;   /* actions, links */
+  --color-brand:   #3D5FDB;   /* actions, links - was #1B4AA0, warmed up per feedback */
+  --color-brand-hover: #2C48B8;
   --color-line:    #C8D9F5;   /* borders */
   --color-muted:   #5B6780;   /* captions, secondary text */
+
+  /* Highlighter - notes-native accent. Constrained use: only ever a
+     text-highlight background behind ink text (like a swiped
+     highlighter), never a dot/chip/status color, so it can't be
+     confused with mastery-mid amber. */
+  --color-highlight: #F7E14D;
 
   --mastery-untested: #8A8FA0;
   --mastery-weak:     #C0392B;
@@ -19,8 +28,10 @@
   --color-card:    #1E1E2C;
   --color-ink:     #E8E6E1;
   --color-brand:   #6C93E0;
+  --color-brand-hover: #8AAEEF;
   --color-line:    #2E3A55;
   --color-muted:   #8B94A8;
+  --color-highlight: #4D451A; /* olive-gold; light ink stays >=4.5:1 on it */
 }
 
 @theme inline {
@@ -28,14 +39,83 @@
   --color-card: var(--color-card);
   --color-ink: var(--color-ink);
   --color-brand: var(--color-brand);
+  --color-brand-hover: var(--color-brand-hover);
   --color-line: var(--color-line);
   --color-muted: var(--color-muted);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-highlight: var(--color-highlight);
+  --color-mastery-untested: var(--mastery-untested);
+  --color-mastery-weak: var(--mastery-weak);
+  --color-mastery-mid: var(--mastery-mid);
+  --color-mastery-strong: var(--mastery-strong);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise-in {
+  animation: rise-in 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise-in {
+    animation: none;
+  }
+}
+
+/* Paper grain - a whisper of tooth on card surfaces so "paper on a
+   desk" is a material, not just a color. Inline SVG noise, no asset.
+   ::after overlay so it stacks on top of any ruled-line background;
+   pointer-events off so links/buttons underneath stay clickable. */
+.paper {
+  position: relative;
+}
+.paper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+}
+.dark .paper::after {
+  opacity: 0.04;
+  mix-blend-mode: screen;
+}
+
+/* Ruled paper - notebook margin rule down the left plus horizontal
+   ruling. Reserved for surfaces that carry student-written content
+   (note bodies, quiz/review question cards, the recommendation card),
+   never for lists, tables, or stats - that scarcity is what keeps it
+   reading as "a page" instead of a theme. Pair with left padding that
+   clears the 27px margin line (pl-11) and, for body text, leading-7
+   (28px) so lines sit on the ruling. */
+.ruled-paper {
+  background-image: linear-gradient(
+      to right,
+      transparent 0 26px,
+      color-mix(in srgb, var(--color-brand) 35%, transparent) 26px 27px,
+      transparent 27px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 27px,
+      color-mix(in srgb, var(--color-line) 45%, transparent) 27px 28px
+    );
 }
 
 body {
   background: var(--color-surface);
   color: var(--color-ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display), Georgia, serif;
 }

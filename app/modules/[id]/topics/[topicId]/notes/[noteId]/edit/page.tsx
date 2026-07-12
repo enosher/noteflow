@@ -18,16 +18,16 @@ export default async function EditNotePage({
   const updateThisNote = updateNote.bind(null, noteId);
 
   return (
-    <main className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Edit note</h1>
+    <main className="mx-auto max-w-2xl p-6 sm:p-8">
+      <h1 className="font-display text-2xl font-semibold text-ink mb-6">Edit note</h1>
       <form action={updateThisNote} className="space-y-4">
         <label className="block">
           <span className="text-sm font-medium">Title</span>
-          <input name="title" required defaultValue={note.title} className="mt-1 w-full rounded-md border px-3 py-2" />
+          <input name="title" required defaultValue={note.title} className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30" />
         </label>
         <label className="block">
           <span className="text-sm font-medium">Content (markdown)</span>
-          <textarea name="content" rows={10} defaultValue={note.content ?? ""} className="mt-1 w-full rounded-md border px-3 py-2 font-mono text-sm" />
+          <textarea name="content" rows={10} defaultValue={note.content ?? ""} className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30 font-mono text-sm" />
         </label>
         <label className="block">
           <span className="text-sm font-medium">
@@ -35,7 +35,7 @@ export default async function EditNotePage({
           </span>
           <input type="file" name="file" className="mt-1 block text-sm" />
         </label>
-        <SubmitButton pendingText="Saving…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Saving…" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover">
           Save changes
         </SubmitButton>
       </form>

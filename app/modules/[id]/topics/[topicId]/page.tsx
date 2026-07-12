@@ -29,19 +29,19 @@ export default async function TopicDetailPage({
   const questions = questionsRes.data ?? [];
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
+    <main className="mx-auto max-w-3xl p-6 sm:p-8">
       <Breadcrumbs moduleId={moduleId} topicId={topicId} />
 
-      <h1 className="mb-2 text-2xl font-bold text-ink">{topic.name}</h1>
-      {topic.description && <p className="mb-6 text-muted">{topic.description}</p>}
+      <h1 className="font-display text-2xl font-semibold text-ink mb-2">{topic.name}</h1>
+      {topic.description && <p className="text-ink mb-6">{topic.description}</p>}
 
       {/* Subtopics */}
-      <section className="mb-8">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Subtopics</h2>
+      <section className="animate-rise-in mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-base italic text-ink">Subtopics</h2>
           <Link
             href={`/modules/${moduleId}/topics/${topicId}/subtopics/new`}
-            className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
+            className="text-sm text-brand hover:underline"
           >
             + New subtopic
           </Link>
@@ -55,12 +55,12 @@ export default async function TopicDetailPage({
         ) : (
           <ul className="space-y-2">
             {subtopics.map((s) => (
-              <li key={s.id} className="flex items-center justify-between rounded-md border border-line bg-card p-3 text-sm transition-colors hover:border-brand/30 hover:shadow-sm">
-                <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="group flex flex-1 items-center gap-3">
-                  <span className="text-ink transition-colors group-hover:text-brand group-hover:underline">{s.name}</span>
-                  <span className="text-muted transition-colors group-hover:text-brand">›</span>
+              <li key={s.id} className="rounded-md border border-line/70 bg-card p-3 text-sm flex items-center justify-between transition-colors hover:bg-surface">
+                <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="flex-1 flex items-center gap-3 group">
+                  <span className="group-hover:text-brand group-hover:underline">{s.name}</span>
+                  <span className="text-muted group-hover:text-brand">›</span>
                 </Link>
-                <div className="ml-4 flex gap-2">
+                <div className="flex gap-2 ml-4">
                   <DeleteButton
                     action={deleteSubtopic.bind(null, s.id)}
                     confirmMessage="Delete this subtopic?"
@@ -73,12 +73,12 @@ export default async function TopicDetailPage({
       </section>
 
       {/* Notes */}
-      <section className="mb-8">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Notes</h2>
+      <section className="animate-rise-in mb-8" style={{ animationDelay: "60ms" }}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-base italic text-ink">Notes</h2>
           <Link
             href={`/modules/${moduleId}/topics/${topicId}/notes/new`}
-            className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
+            className="text-sm text-brand hover:underline"
           >
             + New note
           </Link>
@@ -92,10 +92,10 @@ export default async function TopicDetailPage({
         ) : (
           <ul className="space-y-2">
             {notes.map((n) => (
-              <li key={n.id} className="rounded-md border border-line bg-card p-3 text-sm transition-colors hover:border-brand/30 hover:shadow-sm">
-                <Link href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`} className="group flex items-center gap-3">
-                  <span className="flex-1 text-ink transition-colors group-hover:text-brand group-hover:underline">{n.title}</span>
-                  <span className="text-muted transition-colors group-hover:text-brand">›</span>
+              <li key={n.id} className="rounded-md border border-line/70 bg-card p-3 text-sm transition-colors hover:bg-surface">
+                <Link href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`} className="flex items-center gap-3 group">
+                  <span className="flex-1 group-hover:text-brand group-hover:underline">{n.title}</span>
+                  <span className="text-muted group-hover:text-brand">›</span>
                 </Link>
               </li>
             ))}
@@ -104,21 +104,21 @@ export default async function TopicDetailPage({
       </section>
 
       {/* Questions */}
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Questions</h2>
+      <section className="animate-rise-in" style={{ animationDelay: "120ms" }}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-base italic text-ink">Questions</h2>
           <div className="flex items-center gap-4">
             {/* Drafts from this topic's notes via Gemini; nothing saves
                 until the review screen - see questions/generate. */}
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/questions/generate`}
-              className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
+              className="text-sm text-brand hover:underline"
             >
               Generate questions
             </Link>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/questions/new`}
-              className="text-sm text-brand transition-opacity hover:opacity-80 hover:underline"
+              className="text-sm text-brand hover:underline"
             >
               + New question
             </Link>
@@ -132,20 +132,20 @@ export default async function TopicDetailPage({
           />
         ) : (
           <>
-            <ul className="mb-4 space-y-2">
+            <ul className="space-y-2 mb-3">
               {questions.map((q) => (
-                <li key={q.id} className="flex items-center justify-between rounded-md border border-line bg-card p-3 text-sm transition-colors hover:border-brand/30 hover:shadow-sm">
-                  <Link href={`/modules/${moduleId}/topics/${topicId}/questions/${q.id}/edit`} className="group flex flex-1 items-center gap-3">
-                    <span className="flex-1 text-ink transition-colors group-hover:text-brand group-hover:underline">{q.prompt}</span>
-                    <span className="text-muted transition-colors group-hover:text-brand">›</span>
+                <li key={q.id} className="rounded-md border border-line/70 bg-card p-3 text-sm flex items-center justify-between transition-colors hover:bg-surface">
+                  <Link href={`/modules/${moduleId}/topics/${topicId}/questions/${q.id}/edit`} className="flex-1 flex items-center gap-3 group">
+                    <span className="flex-1 group-hover:text-brand group-hover:underline">{q.prompt}</span>
+                    <span className="text-muted group-hover:text-brand">›</span>
                   </Link>
-                  <span className="ml-4 shrink-0 text-muted">Difficulty {q.difficulty}</span>
+                  <span className="text-muted ml-4 shrink-0 tabular-nums">Difficulty {q.difficulty}</span>
                 </li>
               ))}
             </ul>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/quiz`}
-              className="inline-block rounded-md bg-brand px-4 py-2 text-sm text-white transition-opacity hover:opacity-80"
+              className="inline-block rounded-md bg-brand px-4 py-2 text-white hover:bg-brand-hover text-sm"
             >
               Start quiz
             </Link>

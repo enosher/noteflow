@@ -23,14 +23,14 @@ export default async function EditSubtopicPage({
   const updateThisSubtopic = updateSubtopic.bind(null, subtopicId);
 
   return (
-    <main className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Edit subtopic</h1>
+    <main className="mx-auto max-w-xl p-6 sm:p-8">
+      <h1 className="font-display text-2xl font-semibold text-ink mb-6">Edit subtopic</h1>
       <form action={updateThisSubtopic} className="space-y-4">
         <label className="block">
           <span className="text-sm font-medium">Name</span>
-          <input name="name" required defaultValue={subtopic.name} className="mt-1 w-full rounded-md border px-3 py-2" />
+          <input name="name" required defaultValue={subtopic.name} className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30" />
         </label>
-        <SubmitButton pendingText="Saving…" className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
+        <SubmitButton pendingText="Saving…" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover">
           Save changes
         </SubmitButton>
       </form>
