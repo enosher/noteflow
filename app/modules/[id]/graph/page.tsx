@@ -25,9 +25,9 @@ export default async function ConceptGraphPage({
   const graph = await getModuleGraph(id);
 
   return (
-    <main className="p-6 max-w-5xl mx-auto">
+    <main className="mx-auto max-w-5xl p-6 sm:p-8">
       <Breadcrumbs moduleId={id} />
-      <h1 className="text-2xl font-bold text-ink">{mod.code} - Concept graph</h1>
+      <h1 className="font-display text-2xl font-semibold text-ink">{mod.code} - Concept graph</h1>
       <p className="mt-1 text-sm text-muted">
         Click a topic, then click another to mark the first as its prerequisite.
         Drag nodes to rearrange, scroll to zoom, drag the background to pan, and

@@ -23,9 +23,9 @@ export default async function ModulesPage() {
   if (error) {
     console.error("[ModulesPage] Failed to load modules:", error.message);
     return (
-      <main className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Modules</h1>
-        <p className="text-red-600 text-sm">
+      <main className="mx-auto max-w-3xl p-6 sm:p-8">
+        <h1 className="font-display text-2xl font-semibold text-ink">Modules</h1>
+        <p className="mt-3 text-sm text-mastery-weak">
           Could not load modules. Try refreshing the page.
         </p>
       </main>
@@ -33,13 +33,12 @@ export default async function ModulesPage() {
   }
 
   return (
-    <main className="p-6 max-w-2xl">
-      {/* Header row: title + primary action */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Modules</h1>
+    <main className="mx-auto max-w-3xl p-6 sm:p-8">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="font-display text-2xl font-semibold text-ink">Modules</h1>
         <Link
           href="/modules/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
         >
           + New module
         </Link>
@@ -47,14 +46,14 @@ export default async function ModulesPage() {
 
       {/* Empty state - shown on first login before any modules exist */}
       {modules.length === 0 ? (
-        <div className="rounded-md border border-dashed border-gray-300 p-8 text-center">
-          <p className="text-gray-500 text-sm">No modules yet.</p>
-          <p className="text-gray-400 text-sm mt-1">
+        <div className="rounded-lg border border-dashed border-line p-10 text-center">
+          <p className="text-sm text-ink">No modules yet.</p>
+          <p className="mt-1 text-sm text-muted">
             Create your first module to start organising your notes.
           </p>
           <Link
             href="/modules/new"
-            className="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            className="mt-4 inline-block rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
           >
             Create module
           </Link>
@@ -62,32 +61,31 @@ export default async function ModulesPage() {
               modules with weeks of quiz history so Track/Adapt are visible
               without the user having to generate that history by hand. */}
           <form action={loadSampleData} className="mt-3">
-            <button
-              type="submit"
-              className="text-sm text-blue-600 underline underline-offset-2 hover:text-blue-700"
-            >
+            <button type="submit" className="text-sm text-brand underline underline-offset-2 hover:text-brand-hover">
               Or load sample data to explore first
             </button>
           </form>
         </div>
       ) : (
         // Module list - each row links to the module detail page
-        <ul className="space-y-2">
+        <ul className="paper animate-rise-in divide-y divide-line/70 overflow-hidden rounded-lg border border-line/70 bg-card">
           {modules.map((m) => (
             <li key={m.id}>
               <Link
                 href={`/modules/${m.id}`}
-                className="flex items-start justify-between rounded-md border p-4 hover:bg-gray-50 transition-colors"
+                className="flex items-start justify-between gap-4 px-5 py-4 transition-colors hover:bg-surface"
               >
                 <div>
-                  <span className="font-semibold text-sm">{m.code}</span>
-                  <span className="text-gray-400 text-sm ml-4">&#8250;</span>
+                  {/* Course codes in mono - codes are data, and the mono
+                      face is the app's register for data. */}
+                  <span className="font-mono text-xs font-medium text-brand">{m.code}</span>
+                  <p className="mt-0.5 font-medium text-ink">{m.name}</p>
                   {m.description && (
-                    <p className="text-gray-400 text-xs mt-1">{m.description}</p>
+                    <p className="mt-0.5 text-sm text-muted">{m.description}</p>
                   )}
                 </div>
                 {/* Chevron gives a visual affordance that the row is clickable */}
-                <span className="text-gray-400 text-sm ml-4">›</span>
+                <span className="mt-1 text-muted">›</span>
               </Link>
             </li>
           ))}

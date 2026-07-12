@@ -10,46 +10,48 @@ export default async function RecommendationDebugPage() {
   const recommendation = await getRecommendedQuestion(supabase);
 
   return (
-    <main className="p-6 max-w-2xl mx-auto">
-      <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+    <main className="mx-auto max-w-2xl p-6 sm:p-8">
+      <Link href="/dashboard" className="text-sm text-brand hover:text-brand-hover">
         ← Back to dashboard
       </Link>
-      <h1 className="text-2xl font-bold mt-2 mb-2">Recommended next question</h1>
-      <p className="text-gray-600 text-sm mb-6">
+      <h1 className="mt-2 mb-2 font-display text-2xl font-semibold text-ink">
+        Recommended next question
+      </h1>
+      <p className="mb-6 text-sm text-muted">
         Debug view - shows the scoring breakdown behind the pick, not just the result.
       </p>
 
       {!recommendation ? (
-        <p className="text-gray-600">No recommendation yet - add some questions and take a quiz first.</p>
+        <p className="text-sm text-muted">No recommendation yet - add some questions and take a quiz first.</p>
       ) : (
         <>
-          <div className="rounded-md border p-4 mb-6">
-            <p className="text-sm text-gray-500 mb-1">{recommendation.topic_name}</p>
-            <p className="font-medium mb-3">{recommendation.prompt}</p>
+          <div className="mb-6 rounded-lg border border-line/70 bg-card p-4">
+            <p className="mb-1 text-xs uppercase tracking-wide text-muted">{recommendation.topic_name}</p>
+            <p className="mb-3 font-medium text-ink">{recommendation.prompt}</p>
             <Link
               href={`/modules/${recommendation.module_id}/topics/${recommendation.topic_id}/quiz`}
-              className="inline-block rounded-md bg-blue-600 px-4 py-2 text-white text-sm hover:bg-blue-700"
+              className="inline-block rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
             >
               Take this quiz
             </Link>
           </div>
 
-          <h2 className="text-lg font-semibold mb-3">Why this question?</h2>
-          <div className="space-y-2 mb-4">
+          <h2 className="mb-3 text-lg font-semibold text-ink">Why this question?</h2>
+          <div className="mb-4 space-y-2">
             {recommendation.breakdown.terms.map((term) => (
               <div
                 key={term.label}
-                className="flex items-center justify-between rounded-md border p-3 text-sm"
+                className="flex items-center justify-between rounded-lg border border-line/70 bg-card p-3 text-sm"
               >
-                <span>{term.label}</span>
-                <span className="text-gray-500">
+                <span className="text-ink">{term.label}</span>
+                <span className="tabular-nums text-muted">
                   {term.rawScore.toFixed(2)} × {term.weight.toFixed(2)} ={" "}
-                  <span className="font-medium text-gray-900">{term.weighted.toFixed(3)}</span>
+                  <span className="font-medium text-ink">{term.weighted.toFixed(3)}</span>
                 </span>
               </div>
             ))}
           </div>
-          <p className="text-right font-semibold">
+          <p className="text-right font-semibold tabular-nums text-ink">
             Total score: {recommendation.breakdown.total.toFixed(3)}
           </p>
         </>

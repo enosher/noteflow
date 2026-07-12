@@ -23,14 +23,14 @@ export async function Breadcrumbs({
   }
 
   return (
-    <nav className="text-sm text-gray-500 mb-4">
+    <nav className="mb-4 text-sm text-muted">
       {crumbs.map((c, i) => (
         <span key={c.href}>
-          {i > 0 && <span className="mx-1">/</span>}
+          {i > 0 && <span className="mx-1.5 text-line">/</span>}
           {i === crumbs.length - 1 ? (
-            <span className="text-gray-700">{c.label}</span>
+            <span className="text-ink">{c.label}</span>
           ) : (
-            <Link href={c.href} className="hover:underline">{c.label}</Link>
+            <Link href={c.href} className="hover:text-brand">{c.label}</Link>
           )}
         </span>
       ))}

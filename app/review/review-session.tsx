@@ -20,8 +20,10 @@ export default function ReviewSession({
 
   if (!current) {
     return (
-      <div className="mt-8 rounded-lg border border-line bg-card p-8 text-center">
-        <p className="text-lg font-medium text-ink">Session complete - {done} reviewed</p>
+      <div className="paper animate-rise-in mt-8 rounded-lg border border-line/70 bg-card p-8 text-center">
+        <p className="font-display text-lg text-ink">
+          Session complete - <span className="font-mono tabular-nums">{done}</span> reviewed
+        </p>
         <a href="/dashboard" className="mt-4 inline-block text-sm text-brand">
           Back to dashboard
         </a>
@@ -41,7 +43,7 @@ export default function ReviewSession({
   const isMcq = current.question_type === "mcq" && current.options;
 
   return (
-    <div className="mt-6 rounded-lg border border-line bg-card p-6">
+    <div className="paper ruled-paper mt-6 rounded-lg border border-line/70 bg-card py-6 pl-11 pr-6">
       <div className="flex items-center justify-between text-xs text-muted">
         <span>{current.topic_name}</span>
         <span className="tabular-nums">{queue.length} left</span>
@@ -59,7 +61,7 @@ export default function ReviewSession({
                 setRevealed(true);
                 grade(opt === current.answer);
               }}
-              className="block w-full rounded border border-line px-4 py-2 text-left text-sm text-ink transition hover:border-brand"
+              className="block w-full rounded-md border border-line px-4 py-2 text-left text-sm text-ink transition hover:border-brand"
             >
               {opt}
             </button>
@@ -70,27 +72,29 @@ export default function ReviewSession({
           {!revealed ? (
             <button
               onClick={() => setRevealed(true)}
-              className="rounded bg-brand px-4 py-2 text-sm text-white"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
             >
               Show answer
             </button>
           ) : (
             <>
-              <p className="rounded border border-line bg-surface px-4 py-3 text-sm text-ink">
+              <p className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink">
                 {current.answer}
               </p>
               <div className="mt-4 flex gap-3">
                 <button
                   disabled={isPending}
                   onClick={() => grade(false)}
-                  className="flex-1 rounded border border-line px-4 py-2 text-sm text-ink"
+                  className="flex-1 rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-mastery-weak/10"
+                  style={{ borderColor: "var(--mastery-weak)", color: "var(--mastery-weak)" }}
                 >
                   Got it wrong
                 </button>
                 <button
                   disabled={isPending}
                   onClick={() => grade(true)}
-                  className="flex-1 rounded bg-brand px-4 py-2 text-sm text-white"
+                  className="flex-1 rounded-md px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                  style={{ background: "var(--mastery-strong)" }}
                 >
                   Got it right
                 </button>

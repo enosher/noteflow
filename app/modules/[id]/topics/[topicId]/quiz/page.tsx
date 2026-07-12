@@ -16,12 +16,12 @@ export default async function QuizPage({
     .eq("topic_id", topicId);
 
   return (
-    <main className="p-6 max-w-2xl mx-auto">
+    <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <Breadcrumbs moduleId={moduleId} topicId={topicId} />
-      <h1 className="text-2xl font-bold mb-6">Quiz</h1>
+      <h1 className="mb-6 font-display text-2xl font-semibold text-ink">Quiz</h1>
 
       {!questions || questions.length === 0 ? (
-        <p className="text-gray-600">No questions yet for this topic - add some first.</p>
+        <p className="text-sm text-muted">No questions yet for this topic - add some first.</p>
       ) : (
         <QuizRunner
           // `options` comes back from Supabase typed as `Json | null`, but

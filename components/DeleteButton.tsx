@@ -19,7 +19,8 @@ export function DeleteButton({
     >
       <button
         type="submit"
-        className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+        className="rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-mastery-weak/10"
+        style={{ borderColor: "var(--mastery-weak)", color: "var(--mastery-weak)" }}
       >
         {label}
       </button>

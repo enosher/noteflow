@@ -16,13 +16,13 @@ export async function NavBar() {
   const dueCount = await getDueReviewCount();
 
   return (
-    <nav className="flex items-center justify-between border-b border-[#E7E4DF] bg-[#FAFAF9] px-6 py-3">
+    <nav className="flex items-center justify-between border-b border-line bg-card px-6 py-3">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           <Zoom />
           <Link
             href="/dashboard"
-            className="text-[15px] font-semibold tracking-tight text-[#1C1B1A]"
+            className="font-display text-[17px] font-semibold tracking-tight text-ink"
           >
             NoteFlow
           </Link>

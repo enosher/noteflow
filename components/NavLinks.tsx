@@ -20,8 +20,8 @@ export function NavLinks({ dueCount = 0 }: { dueCount?: number }) {
             href={item.href}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-colors ${
               isActive
-                ? "bg-[#E4F0EE] font-medium text-[#0F6B66]"
-                : "text-[#6B6863] hover:text-[#1C1B1A]"
+                ? "bg-brand/10 font-medium text-brand"
+                : "text-muted hover:text-ink"
             }`}
           >
             {item.label}

@@ -113,9 +113,9 @@ export function GenerateQuestionsFlow({
             max={MAX_COUNT}
             value={count}
             onChange={(e) => setCount(Number(e.target.value))}
-            className="mt-1 w-24 rounded-md border px-3 py-2"
+            className="mt-1 w-24 rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30"
           />
-          <span className="ml-2 text-xs text-gray-500">1-8</span>
+          <span className="ml-2 text-xs text-muted">1-8</span>
         </label>
 
         <div>
@@ -134,18 +134,18 @@ export function GenerateQuestionsFlow({
               Short answer
             </label>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted">
             Long-answer questions aren&apos;t generated - they can&apos;t be auto-graded, so an AI-written
             one would count as correct no matter what you type. Add those by hand instead.
           </p>
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-mastery-weak">{error}</p>}
 
         <button
           onClick={handleGenerate}
           disabled={isPending || noTypesSelected}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-md bg-brand px-4 py-2 text-sm text-white hover:bg-brand-hover disabled:opacity-50"
         >
           {isPending ? "Reading your notes…" : "Generate questions"}
         </button>
@@ -156,9 +156,9 @@ export function GenerateQuestionsFlow({
   return (
     <div className="space-y-4">
       {drafts.length === 0 ? (
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted">
           Nothing left to review - everything was discarded.{" "}
-          <button onClick={startOver} className="text-blue-600 hover:underline">
+          <button onClick={startOver} className="text-brand hover:underline">
             Generate more
           </button>
         </p>
@@ -167,27 +167,27 @@ export function GenerateQuestionsFlow({
           {drafts.map((d) => {
             const valid = isValidDraft(d);
             return (
-              <div key={d._key} className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+              <div key={d._key} className="rounded-lg border border-dashed border-line bg-surface p-4">
+                <div className="flex items-center justify-between text-xs text-muted mb-2">
                   <span>
                     AI suggestion · {d.question_type === "mcq" ? "Multiple choice" : "Short answer"}
                   </span>
-                  {!valid && <span className="text-red-600 font-medium">Needs a fix before saving</span>}
+                  {!valid && <span className="text-mastery-weak font-medium">Needs a fix before saving</span>}
                 </div>
 
                 <label className="block mb-2">
-                  <span className="text-xs font-medium text-gray-600">Prompt</span>
+                  <span className="text-xs font-medium text-muted">Prompt</span>
                   <textarea
                     value={d.prompt}
                     onChange={(e) => updateDraft(d._key, { prompt: e.target.value })}
                     rows={2}
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30 text-sm"
                   />
                 </label>
 
                 {d.question_type === "mcq" && d.options && (
                   <div className="mb-2 space-y-1">
-                    <span className="text-xs font-medium text-gray-600">Options</span>
+                    <span className="text-xs font-medium text-muted">Options</span>
                     {d.options.map((opt, i) => (
                       <input
                         key={i}
@@ -200,33 +200,33 @@ export function GenerateQuestionsFlow({
                 )}
 
                 <label className="block mb-2">
-                  <span className="text-xs font-medium text-gray-600">Answer</span>
+                  <span className="text-xs font-medium text-muted">Answer</span>
                   {d.question_type === "mcq" && (
-                    <p className="text-xs text-gray-500">Must exactly match one of the options above.</p>
+                    <p className="text-xs text-muted">Must exactly match one of the options above.</p>
                   )}
                   <textarea
                     value={d.answer}
                     onChange={(e) => updateDraft(d._key, { answer: e.target.value })}
                     rows={1}
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30 text-sm"
                   />
                 </label>
 
                 <label className="block mb-3 w-28">
-                  <span className="text-xs font-medium text-gray-600">Difficulty (1-5)</span>
+                  <span className="text-xs font-medium text-muted">Difficulty (1-5)</span>
                   <input
                     type="number"
                     min={1}
                     max={5}
                     value={d.difficulty}
                     onChange={(e) => updateDraft(d._key, { difficulty: Number(e.target.value) })}
-                    className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30 text-sm"
                   />
                 </label>
 
                 <button
                   onClick={() => discard(d._key)}
-                  className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+                  className="rounded-md border border-mastery-weak px-3 py-1.5 text-sm text-mastery-weak hover:bg-mastery-weak/10"
                 >
                   Discard
                 </button>
@@ -234,22 +234,22 @@ export function GenerateQuestionsFlow({
             );
           })}
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-mastery-weak">{error}</p>}
 
           <div className="flex items-center gap-3">
             <button
               onClick={handleSave}
               disabled={isPending || drafts.some((d) => !isValidDraft(d))}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-md bg-brand px-4 py-2 text-sm text-white hover:bg-brand-hover disabled:opacity-50"
             >
               {isPending ? "Saving…" : `Save ${drafts.length} question${drafts.length === 1 ? "" : "s"}`}
             </button>
-            <button onClick={startOver} className="text-sm text-gray-600 hover:underline">
+            <button onClick={startOver} className="text-sm text-muted hover:underline">
               Start over
             </button>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}`}
-              className="text-sm text-gray-600 hover:underline"
+              className="text-sm text-muted hover:underline"
             >
               Cancel
             </Link>

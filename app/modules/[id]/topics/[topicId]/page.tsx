@@ -28,32 +28,32 @@ export default async function TopicDetailPage({
   const questions = questionsRes.data ?? [];
 
   return (
-    <main className="p-6 max-w-3xl mx-auto">
+    <main className="mx-auto max-w-3xl p-6 sm:p-8">
       <Breadcrumbs moduleId={moduleId} topicId={topicId} />
 
-      <h1 className="text-2xl font-bold mb-2">{topic.name}</h1>
-      {topic.description && <p className="text-gray-700 mb-6">{topic.description}</p>}
+      <h1 className="font-display text-2xl font-semibold text-ink mb-2">{topic.name}</h1>
+      {topic.description && <p className="text-ink mb-6">{topic.description}</p>}
 
       {/* Subtopics */}
-      <section className="mb-8">
+      <section className="animate-rise-in mb-8">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Subtopics</h2>
+          <h2 className="font-display text-base italic text-ink">Subtopics</h2>
           <Link
             href={`/modules/${moduleId}/topics/${topicId}/subtopics/new`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-brand hover:underline"
           >
             + New subtopic
           </Link>
         </div>
         {subtopics.length === 0 ? (
-          <p className="text-gray-600 text-sm">No subtopics yet.</p>
+          <p className="text-muted text-sm">No subtopics yet.</p>
         ) : (
           <ul className="space-y-2">
             {subtopics.map((s) => (
-              <li key={s.id} className="rounded-md border p-3 text-sm flex items-center justify-between hover:bg-gray-50">
+              <li key={s.id} className="rounded-md border border-line/70 bg-card p-3 text-sm flex items-center justify-between transition-colors hover:bg-surface">
                 <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="flex-1 flex items-center gap-3 group">
-                  <span className="group-hover:text-blue-600 group-hover:underline">{s.name}</span>
-                  <span className="text-gray-300 group-hover:text-blue-400">›</span>
+                  <span className="group-hover:text-brand group-hover:underline">{s.name}</span>
+                  <span className="text-muted group-hover:text-brand">›</span>
                 </Link>
                 <div className="flex gap-2 ml-4">
                   <DeleteButton
@@ -68,25 +68,25 @@ export default async function TopicDetailPage({
       </section>
 
       {/* Notes */}
-      <section className="mb-8">
+      <section className="animate-rise-in mb-8" style={{ animationDelay: "60ms" }}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Notes</h2>
+          <h2 className="font-display text-base italic text-ink">Notes</h2>
           <Link
             href={`/modules/${moduleId}/topics/${topicId}/notes/new`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-brand hover:underline"
           >
             + New note
           </Link>
         </div>
         {notes.length === 0 ? (
-          <p className="text-gray-600 text-sm">No notes yet.</p>
+          <p className="text-muted text-sm">No notes yet.</p>
         ) : (
           <ul className="space-y-2">
             {notes.map((n) => (
-              <li key={n.id} className="rounded-md border p-3 text-sm hover:bg-gray-50">
+              <li key={n.id} className="rounded-md border border-line/70 bg-card p-3 text-sm transition-colors hover:bg-surface">
                 <Link href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`} className="flex items-center gap-3 group">
-                  <span className="flex-1 group-hover:text-blue-600 group-hover:underline">{n.title}</span>
-                  <span className="text-gray-300 group-hover:text-blue-400">›</span>
+                  <span className="flex-1 group-hover:text-brand group-hover:underline">{n.title}</span>
+                  <span className="text-muted group-hover:text-brand">›</span>
                 </Link>
               </li>
             ))}
@@ -95,44 +95,44 @@ export default async function TopicDetailPage({
       </section>
 
       {/* Questions */}
-      <section>
+      <section className="animate-rise-in" style={{ animationDelay: "120ms" }}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Questions</h2>
+          <h2 className="font-display text-base italic text-ink">Questions</h2>
           <div className="flex items-center gap-4">
             {/* Drafts from this topic's notes via Gemini; nothing saves
                 until the review screen - see questions/generate. */}
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/questions/generate`}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-brand hover:underline"
             >
               Generate questions
             </Link>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/questions/new`}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-brand hover:underline"
             >
               + New question
             </Link>
           </div>
         </div>
         {questions.length === 0 ? (
-          <p className="text-gray-600 text-sm">No questions yet.</p>
+          <p className="text-muted text-sm">No questions yet.</p>
         ) : (
           <>
             <ul className="space-y-2 mb-3">
               {questions.map((q) => (
-                <li key={q.id} className="rounded-md border p-3 text-sm flex items-center justify-between hover:bg-gray-50">
+                <li key={q.id} className="rounded-md border border-line/70 bg-card p-3 text-sm flex items-center justify-between transition-colors hover:bg-surface">
                   <Link href={`/modules/${moduleId}/topics/${topicId}/questions/${q.id}/edit`} className="flex-1 flex items-center gap-3 group">
-                    <span className="flex-1 group-hover:text-blue-600 group-hover:underline">{q.prompt}</span>
-                    <span className="text-gray-300 group-hover:text-blue-400">›</span>
+                    <span className="flex-1 group-hover:text-brand group-hover:underline">{q.prompt}</span>
+                    <span className="text-muted group-hover:text-brand">›</span>
                   </Link>
-                  <span className="text-gray-500 ml-4 shrink-0">Difficulty {q.difficulty}</span>
+                  <span className="text-muted ml-4 shrink-0 tabular-nums">Difficulty {q.difficulty}</span>
                 </li>
               ))}
             </ul>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}/quiz`}
-              className="inline-block rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 text-sm"
+              className="inline-block rounded-md bg-brand px-4 py-2 text-white hover:bg-brand-hover text-sm"
             >
               Start quiz
             </Link>

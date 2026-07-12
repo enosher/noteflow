@@ -13,7 +13,7 @@ export default async function ReviewPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-ink">Review</h1>
+      <h1 className="font-display text-2xl font-semibold text-ink">Review</h1>
       <p className="mt-1 text-sm text-muted">
         {due.length === 0
           ? "Nothing due - answering quiz questions schedules them for review at growing intervals."
