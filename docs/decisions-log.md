@@ -168,6 +168,32 @@ Term definitions:
 
 **Free-tier disclosure still needed:** the free tier lets Google train on inputs/outputs - i.e. on users' study notes. Needs one line in the README's Known Limitations section (a writing task, not a code one - flagging here so it doesn't get lost).
 
+**Expected AI-gen failures return `{ ok, message }` from the server action instead of throwing.** Discovered that Next.js blanks the message of any `Error` thrown from a Server Action once deployed in production, so every `friendlyMessage()`-wrapped error in the generation flow was silently swallowed on the live URL despite working locally. Since these are anticipated, recoverable failures (bad Gemini response, over the daily cap) rather than genuine crashes, `generateQuestionDrafts`/`saveGeneratedQuestions` return a result object the UI can render directly; unexpected errors still throw and hit `app/error.tsx`.
+
+**Switched from `gemini-2.5-flash` to `gemini-3.5-flash` mid-M3.** `gemini-2.5-flash` started 404ing for new API keys on Google's side from 9 July 2026, ahead of its listed 16 October 2026 shutdown date (confirmed via the Google AI Developers Forum) — treated as a live compatibility break rather than a bug in our code, and Google's own listed replacement model was the safest swap.
+
+**`gemini-3.5-flash`'s `thinkingLevel` needed setting to `"minimal"`, not left at its `"medium"` default.** The default draws thinking tokens from the same `maxOutputTokens` budget as the actual JSON answer, so the answer itself was getting truncated before parsing. Raised `maxOutputTokens` to 4096 as a second safety margin and added raw-response logging on parse failure so a similar truncation is diagnosable from the logs alone next time.
+
+**A shared daily generation cap (`DAILY_GENERATION_CAP` / `ai_generation_log` table) protects one shared `GEMINI_API_KEY` used across every tester on this deployment.** Without a cap, a single enthusiastic tester could burn the whole team's quota before an evaluator gets to try the feature. Capped requests get a message pointing at the milestone video instead of a raw API error, since "watch the demo" is a more useful fallback than an opaque failure.
+
+---
+
+## Empty states, loading, and onboarding (M3)
+
+**Loading skeletons were added per-route (`loading.tsx` in each data-heavy folder) rather than one shared global loading state.** Next.js's file-based loading convention already scopes a skeleton to the segment being fetched; a single global spinner would flash on every navigation, including ones that resolve instantly from cache.
+
+**`EmptyState` and `Skeleton` were built as shared components rather than inlined per page.** Every list view (modules, module detail, topic detail) needed the same shape of "nothing here yet" messaging and the same shimmer treatment; a shared component keeps that consistent and means a future list view gets both for free.
+
+**Getting-started checklist lives on the dashboard, not as a separate onboarding route.** The dashboard is already the first page a logged-in user lands on; a separate route would be one more click between signup and the checklist actually being seen. Checklist state is tracked per-account via `app/actions/onboarding.ts` rather than inferred from data presence, so dismissing a step is a deliberate action, not a guess based on whether a module happens to exist yet.
+
+---
+
+## Visual design system (M3)
+
+**Design-token migration was finished as a dedicated pass (M3) rather than case-by-case as components were built.** Components written early in M2 predate the semantic token set introduced later and had accumulated hardcoded hex values; rather than fixing them opportunistically (which risked missing some indefinitely), a dedicated sweep across all remaining pages closed the gap in one pass, verified against the M1/M2 TA feedback that diagrams and visuals needed more polish.
+
+**Visual language pass (paper-physics shadows, ruled/lined surfaces, type-register hierarchy) applied broadly across page files rather than to a handful of "hero" pages.** A visual identity that only appears on the dashboard and marketing-style pages reads as inconsistent the moment a user clicks into a form or detail page; applying it everywhere in one branch (`design/visual-refresh`) kept the whole app visually coherent at once rather than half-refreshed.
+
 ---
 
 ## Breadcrumbs
