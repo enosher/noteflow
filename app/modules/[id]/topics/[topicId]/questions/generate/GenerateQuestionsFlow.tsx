@@ -4,13 +4,10 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { generateQuestionDrafts, saveGeneratedQuestions } from "./actions";
 import { isValidDraft, type GeneratedQuestion, type QuestionType } from "@/lib/generated-questions";
+import Skeleton from "@/components/skeleton";
 
-// A temporary id so React can track and update each card before it's
-// saved and gets a real id. Never sent to the server.
 type Draft = GeneratedQuestion & { _key: string };
 
-// Copies each field over by name instead of a shortcut that drops `_key` -
-// that shortcut looks like an unused variable and trips up the linter.
 function stripLocalKey(d: Draft): GeneratedQuestion {
   return {
     prompt: d.prompt,
@@ -43,7 +40,7 @@ export function GenerateQuestionsFlow({
 
   function handleGenerate() {
     if (noTypesSelected) {
-      setError("Pick at least one question type.");
+      setError("Please select at least one question type to generate.");
       return;
     }
     setError(null);
@@ -52,9 +49,6 @@ export function GenerateQuestionsFlow({
       ...(wantShortAnswer ? (["short_answer"] as const) : []),
     ];
     startTransition(async () => {
-      // Returns a result object instead of throwing an error - in
-      // production, Next.js hides the real text of thrown errors, which
-      // would blank out friendly messages like "rate limited" below.
       const result = await generateQuestionDrafts(topicId, count, types);
       if (!result.ok) {
         setError(result.message);
@@ -93,8 +87,6 @@ export function GenerateQuestionsFlow({
     if (!drafts || drafts.length === 0) return;
     setError(null);
     startTransition(async () => {
-      // A successful save redirects away and never returns here, so a
-      // returned value means it failed (same reason as handleGenerate above).
       const result = await saveGeneratedQuestions(topicId, drafts.map(stripLocalKey));
       if (result && !result.ok) {
         setError(result.message);
@@ -103,51 +95,73 @@ export function GenerateQuestionsFlow({
   }
 
   if (!inReview) {
+    if (isPending) {
+      return (
+        <div className="space-y-4">
+          <p className="animate-pulse text-sm font-medium text-ink">Analyzing notes & generating proposals…</p>
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      );
+    }
+
     return (
-      <div className="space-y-5">
+      <div className="space-y-5 rounded-lg border border-line bg-card p-6 shadow-sm">
         <label className="block">
-          <span className="text-sm font-medium">Number of questions</span>
-          <input
-            type="number"
-            min={MIN_COUNT}
-            max={MAX_COUNT}
-            value={count}
-            onChange={(e) => setCount(Number(e.target.value))}
-            className="mt-1 w-24 rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30"
-          />
-          <span className="ml-2 text-xs text-muted">1-8</span>
+          <span className="text-sm font-medium text-ink">Questions to generate</span>
+          <div className="mt-2 flex items-center gap-3">
+            <input
+              type="number"
+              min={MIN_COUNT}
+              max={MAX_COUNT}
+              value={count}
+              onChange={(e) => setCount(Number(e.target.value))}
+              className="w-24 rounded-md border border-line bg-transparent px-3 py-2 text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            />
+            <span className="text-xs text-muted">Range: 1–8</span>
+          </div>
         </label>
 
         <div>
-          <span className="text-sm font-medium">Question types</span>
-          <div className="mt-1 space-y-1">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={wantMcq} onChange={(e) => setWantMcq(e.target.checked)} />
-              Multiple choice
+          <span className="text-sm font-medium text-ink">Question types</span>
+          <div className="mt-2 space-y-2">
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input 
+                type="checkbox" 
+                checked={wantMcq} 
+                onChange={(e) => setWantMcq(e.target.checked)}
+                className="rounded border-line text-brand focus:ring-brand"
+              />
+              Multiple Choice (MCQ)
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex items-center gap-2 text-sm text-ink">
               <input
                 type="checkbox"
                 checked={wantShortAnswer}
                 onChange={(e) => setWantShortAnswer(e.target.checked)}
+                className="rounded border-line text-brand focus:ring-brand"
               />
-              Short answer
+              Short Answer
             </label>
           </div>
-          <p className="mt-1 text-xs text-muted">
-            Long-answer questions aren&apos;t generated - they can&apos;t be auto-graded, so an AI-written
-            one would count as correct no matter what you type. Add those by hand instead.
+          <p className="mt-3 leading-relaxed text-xs text-muted">
+            Note: Long-answer questions cannot be auto-graded reliably, so AI generation is disabled for them. Please add those manually.
           </p>
         </div>
 
-        {error && <p className="text-sm text-mastery-weak">{error}</p>}
+        {error && (
+          <div className="rounded-md border border-red-500/50 bg-red-500/10 p-3">
+            <p className="text-sm text-red-500">{error}</p>
+          </div>
+        )}
 
         <button
           onClick={handleGenerate}
-          disabled={isPending || noTypesSelected}
-          className="rounded-md bg-brand px-4 py-2 text-sm text-white hover:bg-brand-hover disabled:opacity-50"
+          disabled={noTypesSelected}
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-50"
         >
-          {isPending ? "Reading your notes…" : "Generate questions"}
+          Generate questions
         </button>
       </div>
     );
@@ -156,100 +170,114 @@ export function GenerateQuestionsFlow({
   return (
     <div className="space-y-4">
       {drafts.length === 0 ? (
-        <p className="text-sm text-muted">
-          Nothing left to review - everything was discarded.{" "}
-          <button onClick={startOver} className="text-brand hover:underline">
-            Generate more
+        <div className="rounded-lg border border-line bg-card p-8 text-center shadow-sm">
+          <p className="text-sm font-medium text-ink">All proposals were discarded.</p>
+          <button 
+            onClick={startOver} 
+            className="mt-4 inline-block rounded-md border border-line px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-line/20"
+          >
+            Start a new batch
           </button>
-        </p>
+        </div>
       ) : (
         <>
           {drafts.map((d) => {
             const valid = isValidDraft(d);
             return (
-              <div key={d._key} className="rounded-lg border border-dashed border-line bg-surface p-4">
-                <div className="flex items-center justify-between text-xs text-muted mb-2">
+              <div key={d._key} className="rounded-lg border border-line bg-surface p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-muted">
                   <span>
-                    AI suggestion · {d.question_type === "mcq" ? "Multiple choice" : "Short answer"}
+                    AI proposal · {d.question_type === "mcq" ? "Multiple choice" : "Short answer"}
                   </span>
-                  {!valid && <span className="text-mastery-weak font-medium">Needs a fix before saving</span>}
+                  {!valid && <span className="text-red-500">Action required: Fix before saving</span>}
                 </div>
 
-                <label className="block mb-2">
-                  <span className="text-xs font-medium text-muted">Prompt</span>
+                <label className="mb-3 block">
+                  <span className="mb-1 block text-xs font-medium text-ink">Prompt</span>
                   <textarea
                     value={d.prompt}
                     onChange={(e) => updateDraft(d._key, { prompt: e.target.value })}
                     rows={2}
-                    className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30 text-sm"
+                    className="w-full rounded-md border border-line bg-transparent px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                   />
                 </label>
 
                 {d.question_type === "mcq" && d.options && (
-                  <div className="mb-2 space-y-1">
-                    <span className="text-xs font-medium text-muted">Options</span>
+                  <div className="mb-3 space-y-2">
+                    <span className="block text-xs font-medium text-ink">Options</span>
                     {d.options.map((opt, i) => (
                       <input
                         key={i}
                         value={opt}
                         onChange={(e) => updateOption(d._key, i, e.target.value)}
-                        className="block w-full rounded-md border px-3 py-1.5 text-sm"
+                        className="block w-full rounded-md border border-line bg-transparent px-3 py-1.5 text-sm text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                       />
                     ))}
                   </div>
                 )}
 
-                <label className="block mb-2">
-                  <span className="text-xs font-medium text-muted">Answer</span>
-                  {d.question_type === "mcq" && (
-                    <p className="text-xs text-muted">Must exactly match one of the options above.</p>
-                  )}
+                <label className="mb-4 block">
+                  <span className="mb-1 flex items-center justify-between text-xs font-medium text-ink">
+                    Answer
+                    {d.question_type === "mcq" && (
+                      <span className="font-normal text-muted">(Must exactly match one option)</span>
+                    )}
+                  </span>
                   <textarea
                     value={d.answer}
                     onChange={(e) => updateDraft(d._key, { answer: e.target.value })}
                     rows={1}
-                    className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30 text-sm"
+                    className="w-full rounded-md border border-line bg-transparent px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
                   />
                 </label>
 
-                <label className="block mb-3 w-28">
-                  <span className="text-xs font-medium text-muted">Difficulty (1-5)</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={5}
-                    value={d.difficulty}
-                    onChange={(e) => updateDraft(d._key, { difficulty: Number(e.target.value) })}
-                    className="mt-1 w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:ring-2 focus:ring-brand/30 text-sm"
-                  />
-                </label>
+                <div className="flex items-end justify-between">
+                  <label className="block w-32">
+                    <span className="mb-1 block text-xs font-medium text-ink">Difficulty (1-5)</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={d.difficulty}
+                      onChange={(e) => updateDraft(d._key, { difficulty: Number(e.target.value) })}
+                      className="w-full rounded-md border border-line bg-transparent px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+                    />
+                  </label>
 
-                <button
-                  onClick={() => discard(d._key)}
-                  className="rounded-md border border-mastery-weak px-3 py-1.5 text-sm text-mastery-weak hover:bg-mastery-weak/10"
-                >
-                  Discard
-                </button>
+                  <button
+                    onClick={() => discard(d._key)}
+                    className="rounded-md border border-line px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
+                  >
+                    Discard proposal
+                  </button>
+                </div>
               </div>
             );
           })}
 
-          {error && <p className="text-sm text-mastery-weak">{error}</p>}
+          {error && (
+            <div className="rounded-md border border-red-500/50 bg-red-500/10 p-3">
+              <p className="text-sm text-red-500">{error}</p>
+            </div>
+          )}
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pt-2">
             <button
               onClick={handleSave}
               disabled={isPending || drafts.some((d) => !isValidDraft(d))}
-              className="rounded-md bg-brand px-4 py-2 text-sm text-white hover:bg-brand-hover disabled:opacity-50"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-80 disabled:opacity-50"
             >
-              {isPending ? "Saving…" : `Save ${drafts.length} question${drafts.length === 1 ? "" : "s"}`}
+              {isPending ? "Saving…" : `Accept & save ${drafts.length} question${drafts.length === 1 ? "" : "s"}`}
             </button>
-            <button onClick={startOver} className="text-sm text-muted hover:underline">
-              Start over
+            <button 
+              onClick={startOver} 
+              className="rounded-md px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-ink"
+            >
+              Discard all & start over
             </button>
             <Link
               href={`/modules/${moduleId}/topics/${topicId}`}
-              className="text-sm text-muted hover:underline"
+              className="rounded-md px-3 py-2 text-sm font-medium text-muted transition-colors hover:text-ink"
             >
               Cancel
             </Link>

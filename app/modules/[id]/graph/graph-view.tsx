@@ -23,19 +23,16 @@ import { masteryTone, MasteryDot, type MasteryTone } from "@/components/mastery-
 import { addPrerequisite, removePrerequisite, type ModuleGraph } from "./actions";
 
 const NODE_R = 30;
-const VIEW_HEIGHT = 560; // px; fixed so the canvas feels like a stage, not a page that grows
+const VIEW_HEIGHT = 560;
 const FIT_PAD = 70;
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.5;
-const DRAG_THRESHOLD = 4; // px of movement before a pointer-down counts as a drag, not a click
-const SETTLE_THRESHOLD = 0.08; // max node movement (world px/tick) below which the sim sleeps
+const DRAG_THRESHOLD = 4;
+const SETTLE_THRESHOLD = 0.08;
 const ALPHA_DECAY = 0.975;
 const MINIMAP_W = 150;
 const MINIMAP_H = 100;
 
-// Wrap a topic name onto up to two centred lines instead of chopping it
-// at 16 chars. "Data Visualisation" deserves better than "Data Visualizat…";
-// only names that overflow both lines get an ellipsis.
 function wrapLabel(name: string, maxChars = 14): string[] {
   const words = name.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -43,24 +40,24 @@ function wrapLabel(name: string, maxChars = 14): string[] {
   for (const w of words) {
     const candidate = current ? `${current} ${w}` : w;
     if (candidate.length <= maxChars || !current) {
-      current = candidate; // fits, or a single word we can't split anyway
+      current = candidate;
     } else if (lines.length === 0) {
-      lines.push(current); // start line two
+      lines.push(current);
       current = w;
     } else {
-      current = candidate; // line two overflows; trimmed below
+      current = candidate;
     }
   }
   lines.push(current);
   return lines.map((l) => (l.length > maxChars + 2 ? `${l.slice(0, maxChars + 1)}…` : l));
 }
 
-// Hover-card wording; deliberately not MasteryDot's tooltip labels.
+// Polished copy for the hover card mastery levels
 const TONE_LABEL: Record<MasteryTone, string> = {
-  untested: "Not tested yet",
-  weak: "Weak - needs practice",
+  untested: "Untested",
+  weak: "Needs practice",
   mid: "Improving",
-  strong: "Strong",
+  strong: "Mastered",
 };
 
 type Transform = { x: number; y: number; k: number };
@@ -76,9 +73,6 @@ export default function GraphView({
   const [isPending, startTransition] = useTransition();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Two copies of the node list on purpose: the animation updates its own
-  // working copy on every frame, then hands React a fresh copy to render.
-  // The screen only ever reads that second copy, never the live one.
   const [renderNodes, setRenderNodes] = useState<SimNode[]>(() =>
     seedLayout(
       initialGraph.topics.map((t) => t.id),
@@ -89,7 +83,6 @@ export default function GraphView({
   const alphaRef = useRef(1);
   const rafRef = useRef<number | null>(null);
 
-  // State renders; the ref feeds pointer handlers. Written together, never in render.
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, k: 1 });
   const transformRef = useRef(transform);
   const applyTransform = useCallback((t: Transform) => {
@@ -98,7 +91,6 @@ export default function GraphView({
   }, []);
   const fitAnimRef = useRef<number | null>(null);
 
-  // Tracked so layout math never reads a ref mid-render.
   const [containerWidth, setContainerWidth] = useState(0);
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -109,7 +101,6 @@ export default function GraphView({
     return () => ro.disconnect();
   }, []);
 
-  // Drag bookkeeping needs no renders; anything drawn lives in state.
   const gesture = useRef<
     | { mode: "node"; id: string; startPointer: { x: number; y: number }; didDrag: boolean }
     | { mode: "pan"; startPointer: { x: number; y: number }; startTransform: Transform }
@@ -129,8 +120,6 @@ export default function GraphView({
     [initialGraph.topics]
   );
 
-  // Everything upstream and downstream of the hovered node. A weak topic
-  // three levels back should visibly reach the cursor - that's the point.
   const chain = useMemo(() => {
     if (!hoveredId) return null;
     const up = reachableFrom(initialGraph.edges, hoveredId, "up");
@@ -142,28 +131,24 @@ export default function GraphView({
     if (!chain) return false;
     const upSide = new Set([hoveredId!, ...chain.up]);
     const downSide = new Set([hoveredId!, ...chain.down]);
-    // On-chain = both ends on the same side of the hovered node.
     return (
       (upSide.has(e.topic_id) && upSide.has(e.prerequisite_topic_id)) ||
       (downSide.has(e.topic_id) && downSide.has(e.prerequisite_topic_id))
     );
   }
 
-  // Simulation loop
-
   const publish = useCallback(() => {
     setRenderNodes(simNodes.current!.map((n) => ({ ...n })));
   }, []);
 
   const runSimulation = useCallback(() => {
-    if (rafRef.current !== null) return; // already running
+    if (rafRef.current !== null) return;
     const loop = () => {
       const nodes = simNodes.current!;
       const pinned = gesture.current?.mode === "node" ? gesture.current.id : null;
       const moved = stepSimulation(nodes, initialGraph.edges, alphaRef.current, DEFAULT_PARAMS, pinned);
       alphaRef.current *= ALPHA_DECAY;
       publish();
-      // Tick while hot; a drag holds the sim awake.
       if ((moved > SETTLE_THRESHOLD && alphaRef.current > 0.005) || pinned) {
         rafRef.current = requestAnimationFrame(loop);
       } else {
@@ -181,8 +166,6 @@ export default function GraphView({
     [runSimulation]
   );
 
-  // Viewport: fit, zoom, pan
-
   const animateTo = useCallback(
     (target: Transform) => {
       if (fitAnimRef.current !== null) cancelAnimationFrame(fitAnimRef.current);
@@ -191,7 +174,7 @@ export default function GraphView({
       const DURATION = 350;
       const step = (now: number) => {
         const t = Math.min((now - start) / DURATION, 1);
-        const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic: fast start, soft landing
+        const ease = 1 - Math.pow(1 - t, 3);
         applyTransform({
           x: from.x + (target.x - from.x) * ease,
           y: from.y + (target.y - from.y) * ease,
@@ -213,7 +196,6 @@ export default function GraphView({
       const { minX, minY, maxX, maxY } = graphBounds(nodes, FIT_PAD);
       const bw = Math.max(maxX - minX, 1);
       const bh = Math.max(maxY - minY, 1);
-      // Cap at 1.1: a two-node graph blown up to 560px looks silly.
       const k = Math.min(el.clientWidth / bw, VIEW_HEIGHT / bh, 1.1);
       const target = {
         k,
@@ -226,8 +208,6 @@ export default function GraphView({
     [animateTo, applyTransform]
   );
 
-  // On first load, run the layout forward a bunch of steps right away so
-  // the user never sees the raw starting grid, then hand off to the loop.
   const didInit = useRef(false);
   useLayoutEffect(() => {
     if (didInit.current) return;
@@ -243,8 +223,6 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fresh graph from the server: survivors keep their positions, newcomers
-  // get seeded, and a gentle reheat ripples the change in - no jarring reset.
   const graphKey = useRef(initialGraph);
   useEffect(() => {
     if (graphKey.current === initialGraph || !simNodes.current) return;
@@ -256,7 +234,6 @@ export default function GraphView({
     );
     simNodes.current = seeded.map((n) => {
       const prev = old.get(n.id);
-      // Trust the new level, keep the old position.
       return prev ? { ...n, x: prev.x, y: prev.y } : n;
     });
     publish();
@@ -275,7 +252,6 @@ export default function GraphView({
       const t = transformRef.current;
       const k = Math.min(Math.max(t.k * factor, MIN_ZOOM), MAX_ZOOM);
       if (k === t.k) return;
-      // Hold the world point under the cursor still while scale changes.
       applyTransform({
         k,
         x: cx - ((cx - t.x) / t.k) * k,
@@ -285,15 +261,12 @@ export default function GraphView({
     [applyTransform]
   );
 
-  // React's built-in scroll handler can't block the page from also
-  // scrolling, so this listens for the scroll wheel directly instead.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const rect = el.getBoundingClientRect();
-      // Trackpad pinch arrives as ctrl+wheel.
       const factor = Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.002));
       zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor);
     };
@@ -311,8 +284,6 @@ export default function GraphView({
     return { x: (p.x - t.x) / t.k, y: (p.y - t.y) / t.k };
   }
 
-  // Pointer gestures
-
   function onBackgroundPointerDown(e: React.PointerEvent) {
     (e.target as Element).setPointerCapture(e.pointerId);
     gesture.current = {
@@ -328,7 +299,7 @@ export default function GraphView({
     (e.target as Element).setPointerCapture(e.pointerId);
     gesture.current = { mode: "node", id, startPointer: localPoint(e), didDrag: false };
     setDragId(id);
-    setHoveredId(null); // a hover card mid-drag is just noise
+    setHoveredId(null);
   }
 
   function onPointerMove(e: React.PointerEvent) {
@@ -336,7 +307,7 @@ export default function GraphView({
     const p = localPoint(e);
 
     if (!g) {
-      if (hoveredId) setHoverPos(p); // track the pointer for the hover card
+      if (hoveredId) setHoverPos(p);
       return;
     }
 
@@ -359,7 +330,7 @@ export default function GraphView({
         node.x = w.x;
         node.y = w.y;
       }
-      reheat(0.3); // neighbours keep flowing around the drag
+      reheat(0.3);
     }
   }
 
@@ -370,12 +341,10 @@ export default function GraphView({
     setIsPanning(false);
     if (g?.mode === "node") {
       if (!g.didDrag) handleNodeClick(g.id);
-      else reheat(0.3); // one last ripple as the node settles
+      else reheat(0.3);
     }
   }
 
-  // Click-to-connect: first click picks the prerequisite, a second click
-  // on another node submits the edge; the same node again cancels.
   function handleNodeClick(id: string) {
     setError(null);
     if (!selectedSource) {
@@ -405,12 +374,8 @@ export default function GraphView({
     });
   }
 
-  // Rendering: everything below reads only state, never refs.
-
   const positions = new Map(renderNodes.map((n) => [n.id, n]));
 
-  // A gentle curve, trimmed to the target's edge. Straight lines read as
-  // clutter; curves read as flow.
   function edgePath(from: SimNode, to: SimNode): string {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
@@ -423,8 +388,6 @@ export default function GraphView({
 
   const hoveredTopic = hoveredId ? topicsById.get(hoveredId) : null;
 
-  // Minimap: world bounds in a fixed 150x100 box, plus the visible rect.
-  // Recomputed per render - a handful of multiplications.
   const mmBounds = graphBounds(renderNodes, 50);
   const mmScale = Math.min(
     MINIMAP_W / Math.max(mmBounds.maxX - mmBounds.minX, 1),
@@ -444,8 +407,6 @@ export default function GraphView({
 
   function onMinimapClick(e: React.MouseEvent<SVGSVGElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
-    // Convert the click from minimap coordinates back to real graph
-    // coordinates, then center the main view there.
     const wx = (e.clientX - rect.left - mmOffX) / mmScale + mmBounds.minX;
     const wy = (e.clientY - rect.top - mmOffY) / mmScale + mmBounds.minY;
     const t = transformRef.current;
@@ -491,15 +452,22 @@ export default function GraphView({
         }
       `}</style>
 
+      {/* Actionable Error State */}
       {error && (
-        <p className="mb-3 rounded border border-line bg-card px-3 py-2 text-sm text-[var(--mastery-weak)]">
-          {error}
-        </p>
+        <div className="mb-3 flex items-center justify-between rounded-md border border-(--mastery-weak) bg-(--mastery-weak)/10 px-4 py-3 text-sm text-(--mastery-weak)">
+          <p className="font-medium">{error}</p>
+          <button 
+            onClick={() => setError(null)} 
+            className="rounded px-2 py-1 font-medium hover:bg-(--mastery-weak)/20 transition-colors"
+          >
+            Dismiss
+          </button>
+        </div>
       )}
 
       <div
         ref={containerRef}
-        className="relative overflow-hidden rounded-lg border border-line bg-card"
+        className="relative overflow-hidden rounded-lg border border-line bg-card shadow-sm"
         style={{ height: VIEW_HEIGHT, touchAction: "none" }}
       >
         <svg
@@ -532,11 +500,9 @@ export default function GraphView({
             >
               <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-brand)" />
             </marker>
-            {/* Subtle lift; heavier halos go muddy in dark mode. */}
             <filter id="node-shadow" x="-40%" y="-40%" width="180%" height="180%">
               <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" floodOpacity="0.25" />
             </filter>
-            {/* The quiet "this is a canvas" cue; world coords, so it zooms. */}
             <pattern id="dot-grid" width="26" height="26" patternUnits="userSpaceOnUse">
               <circle cx="1.2" cy="1.2" r="1.2" fill="var(--color-line)" opacity="0.55" />
             </pattern>
@@ -564,7 +530,6 @@ export default function GraphView({
                   key={`${edge.topic_id}-${edge.prerequisite_topic_id}`}
                   className={dimmed ? "graph-dim" : "graph-lit"}
                 >
-                  {/* Fat invisible twin - edge hover shouldn't demand pixel-perfect aim. */}
                   <path
                     d={d}
                     fill="none"
@@ -598,7 +563,7 @@ export default function GraphView({
                       fill="var(--mastery-weak)"
                       style={{ pointerEvents: "none" }}
                     >
-                      click to remove
+                      Click to remove dependency
                     </text>
                   )}
                 </g>
@@ -622,7 +587,6 @@ export default function GraphView({
                   onPointerEnter={(e) => {
                     if (!gesture.current) {
                       setHoveredId(t.id);
-                      // Seed now - waiting for pointermove hides the card if the pointer stops dead.
                       setHoverPos(localPoint(e));
                     }
                   }}
@@ -646,7 +610,6 @@ export default function GraphView({
                     strokeWidth={isSelected ? 4 : 2}
                     filter="url(#node-shadow)"
                   />
-                  {/* Answers "how am I doing?" at a glance, no hover needed. */}
                   {t.attempts > 0 && t.accuracy !== null && (
                     <text
                       textAnchor="middle"
@@ -678,8 +641,6 @@ export default function GraphView({
           </g>
         </svg>
 
-        {/* Written out as three separate buttons because the linter can't
-            check refs when they come from a mapped list. */}
         <div className="absolute right-3 top-3 flex flex-col overflow-hidden rounded-md border border-line bg-card shadow-sm">
           <button
             type="button"
@@ -710,7 +671,6 @@ export default function GraphView({
           </button>
         </div>
 
-        {/* Only when big enough to lose your place; on 3 nodes it's furniture. */}
         {showMinimap && (
           <svg
             width={MINIMAP_W}
@@ -764,8 +724,6 @@ export default function GraphView({
           </svg>
         )}
 
-        {/* "Why is this node that colour?" - pointer-events: none so it
-            never steals the hover that summoned it. */}
         {hoveredTopic && hoverPos && !dragId && (
           <div
             className="pointer-events-none absolute z-10 w-56 rounded-md border border-line bg-card p-3 shadow-lg"
@@ -785,44 +743,45 @@ export default function GraphView({
                 attempt{hoveredTopic.attempts === 1 ? "" : "s"}
               </p>
             ) : (
-              <p className="mt-1 text-xs text-muted">No quiz attempts yet</p>
+              <p className="mt-1 text-xs text-muted">No quiz attempts recorded</p>
             )}
             {blocked.has(hoveredTopic.id) && (
-              <p className="mt-1 text-xs" style={{ color: "var(--mastery-weak)" }}>
-                Gated: a prerequisite is weak - practice that first.
+              <p className="mt-1 text-xs font-medium" style={{ color: "var(--mastery-weak)" }}>
+                Locked: A prerequisite requires more practice first.
               </p>
             )}
             {selectedSource && selectedSource !== hoveredTopic.id && (
-              <p className="mt-1 text-xs" style={{ color: "var(--color-brand)" }}>
-                Click to make “{topicsById.get(selectedSource)?.name}” a prerequisite of this.
+              <p className="mt-1 text-xs font-medium" style={{ color: "var(--color-brand)" }}>
+                Click to set "{topicsById.get(selectedSource)?.name}" as a prerequisite.
               </p>
             )}
           </div>
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted">
-        <span className="flex items-center gap-1">
+      {/* Polished Legend */}
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-medium uppercase tracking-wide text-muted">
+        <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "var(--mastery-untested)" }} />
-          Not tested
+          Untested
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "var(--mastery-weak)" }} />
-          Weak
+          Needs practice
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "var(--mastery-mid)" }} />
           Improving
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: "var(--mastery-strong)" }} />
-          Strong
+          Mastered
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-dashed" style={{ borderColor: "var(--mastery-weak)" }} />
-          Blocked by a weak prerequisite
+          Locked by prerequisite
         </span>
-        {isPending && <span>Saving…</span>}
+        {isPending && <span className="text-brand">Saving changes…</span>}
       </div>
     </div>
   );
