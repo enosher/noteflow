@@ -5,6 +5,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { FlowMark } from '@/components/FlowMark'
+import { AuthBrandPanel } from '@/components/AuthBrandPanel'
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
@@ -31,50 +33,96 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-8">
-      <form onSubmit={handleSignup} className="w-full max-w-sm space-y-4">
-        <h1 className="text-center text-2xl font-bold text-ink">Create account</h1>
+    <main className="grid min-h-screen lg:grid-cols-2">
+      {/* Left: brand panel, visual signature - hidden below lg */}
+      <AuthBrandPanel
+        headline="Turn your notes into a map of what you actually understand."
+        subtext="Organise modules, generate practice questions, and let NoteFlow flag the topics that need another look."
+        caption="Built for focused study."
+      />
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          className="w-full rounded-md border border-line bg-transparent px-4 py-2 text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-        />
-
-        <input
-          type="password"
-          placeholder="Password (min 6 chars)"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          minLength={6}
-          className="w-full rounded-md border border-line bg-transparent px-4 py-2 text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-brand px-4 py-2 text-white transition-opacity hover:opacity-80 disabled:opacity-50"
-        >
-          {loading ? 'Creating...' : 'Sign up'}
-        </button>
-
-        {message && (
-          <div className={`text-center text-sm ${message.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
-            {message.text}
+      {/* Right: signup form */}
+      <div className="flex items-center justify-center bg-surface p-6 sm:p-10">
+        <div className="w-full max-w-sm animate-rise-in">
+          <div className="mb-8 flex flex-col items-center gap-3 lg:hidden">
+            <FlowMark size={84} />
+            <span className="font-display text-2xl font-semibold text-ink">
+              NoteFlow
+            </span>
           </div>
-        )}
 
-        <p className="text-center text-sm text-muted">
-          Already have an account?{' '}
-          <Link href="/login" className="text-brand hover:underline">
-            Log in
-          </Link>
-        </p>
-      </form>
+          <div className="rounded-lg border border-line/70 bg-card p-8 sm:p-10">
+            <h1 className="font-display text-[26px] font-semibold text-ink">
+              Create your account
+            </h1>
+            <p className="mt-1.5 text-sm text-muted">
+              Free, no credit card - just a study tool.
+            </p>
+
+            <form onSubmit={handleSignup} className="mt-7 space-y-4">
+              <div>
+                <label htmlFor="email" className="mb-1.5 block text-xs font-medium text-muted">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@gmail.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder-muted/70 outline-none transition-shadow focus:border-brand focus:ring-2 focus:ring-brand/30"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-1.5 block text-xs font-medium text-muted">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Min 6 characters"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder-muted/70 outline-none transition-shadow focus:border-brand focus:ring-2 focus:ring-brand/30"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-brand px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-brand-hover hover:shadow-md active:scale-[0.99] disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Sign up'}
+              </button>
+
+              {message && (
+                <div
+                  className="text-sm text-center"
+                  style={{
+                    color:
+                      message.type === 'error'
+                        ? 'var(--mastery-weak)'
+                        : 'var(--mastery-strong)',
+                  }}
+                >
+                  {message.text}
+                </div>
+              )}
+
+              <p className="pt-1 text-center text-sm text-muted">
+                Already have an account?{' '}
+                <Link href="/login" className="font-medium text-brand hover:text-brand-hover underline underline-offset-2">
+                  Log in
+                </Link>
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
     </main>
   )
 }

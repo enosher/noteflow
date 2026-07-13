@@ -27,10 +27,12 @@ const LABEL: Record<MasteryTone, string> = {
 export function MasteryDot({
   accuracy,
   attempts,
+  size = 10,
   className = '',
 }: {
   accuracy: number | null;
   attempts: number;
+  size?: number;
   className?: string;
 }) {
   const tone = masteryTone(accuracy, attempts);
@@ -38,8 +40,8 @@ export function MasteryDot({
     <span
       title={LABEL[tone]}
       aria-label={LABEL[tone]}
-      className={`inline-block h-2.5 w-2.5 rounded-full align-middle ${className}`}
-      style={{ background: `var(--mastery-${tone})` }}
+      className={`inline-block shrink-0 rounded-full align-middle ${className}`}
+      style={{ background: `var(--mastery-${tone})`, width: size, height: size }}
     />
   );
 }

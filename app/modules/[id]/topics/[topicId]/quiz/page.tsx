@@ -17,12 +17,12 @@ export default async function QuizPage({
     .eq("topic_id", topicId);
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
+    <main className="mx-auto max-w-2xl p-6 sm:p-8">
       <Breadcrumbs moduleId={moduleId} topicId={topicId} />
-      <h1 className="mb-6 mt-4 text-2xl font-bold text-ink">Quiz</h1>
+      <h1 className="mb-6 font-display text-2xl font-semibold text-ink">Quiz</h1>
 
       {!questions || questions.length === 0 ? (
-        <EmptyState 
+        <EmptyState
           message="No questions yet for this topic. Add some to test your mastery."
           actionLabel="Add a question"
           actionHref={`/modules/${moduleId}/topics/${topicId}/questions/new`}

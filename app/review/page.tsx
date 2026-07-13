@@ -14,17 +14,18 @@ export default async function ReviewPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="mb-4 text-2xl font-bold text-ink">Review</h1>
-      
+      <h1 className="font-display text-2xl font-semibold text-ink">Review</h1>
       {due.length === 0 ? (
-        <EmptyState
-          message="You're all caught up! Take a quiz to add questions to your review schedule."
-          actionLabel="Explore modules"
-          actionHref="/modules"
-        />
+        <div className="mt-4">
+          <EmptyState
+            message="You're all caught up! Take a quiz to add questions to your review schedule."
+            actionLabel="Explore modules"
+            actionHref="/modules"
+          />
+        </div>
       ) : (
         <>
-          <p className="mb-6 text-sm text-muted">
+          <p className="mt-1 text-sm text-muted tabular-nums">
             {due.length} question{due.length === 1 ? "" : "s"} due for review.
           </p>
           <ReviewSession initialQueue={due} />

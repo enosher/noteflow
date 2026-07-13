@@ -8,6 +8,25 @@ const STEPS = [
   { key: 'hasAttempt', label: 'Take your first quiz', href: '/modules' },
 ] as const;
 
+// Small SVG check, same 1.75 stroke as the app's icon set - a text "✓"
+// glyph renders differently per platform font.
+function CheckIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-3 w-3"
+      aria-hidden="true"
+    >
+      <path d="M4 12.5 9.5 18 20 6.5" />
+    </svg>
+  );
+}
+
 export default function GettingStarted({
   status,
 }: {
@@ -19,9 +38,9 @@ export default function GettingStarted({
   const done = STEPS.length - remaining.length;
 
   return (
-    <section className="mb-8 rounded-lg border border-line bg-card p-6 shadow-sm">
+    <section className="paper rounded-lg border border-line/70 bg-card p-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-ink">Getting started</h2>
+        <h2 className="font-display text-base italic text-ink">Getting started</h2>
         <span className="text-xs font-medium text-muted tabular-nums">
           {done}/{STEPS.length}
         </span>
@@ -33,10 +52,10 @@ export default function GettingStarted({
             <li key={s.key} className="flex items-center gap-3 text-sm">
               <span
                 aria-hidden
-                className={`flex h-5 w-5 items-center justify-center rounded-full border text-xs transition-colors
+                className={`flex h-5 w-5 items-center justify-center rounded-full border transition-colors
                   ${isDone ? 'border-brand bg-brand text-white' : 'border-line text-muted'}`}
               >
-                {isDone ? '✓' : ''}
+                {isDone ? <CheckIcon /> : null}
               </span>
               {isDone ? (
                 <span className="text-muted line-through">{s.label}</span>
