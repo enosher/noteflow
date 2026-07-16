@@ -66,6 +66,20 @@
   }
 }
 
+/* Card-swap variant for the review queue. Same rise-in motion, but at
+   150ms so it can re-trigger on every card without feeling sluggish.
+   Lives here rather than inline in the component so the review screen
+   stays on the same animation vocabulary as the rest of the app. */
+.animate-rise-in-fast {
+  animation: rise-in 150ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise-in-fast {
+    animation: none;
+  }
+}
+
 /* Paper grain - a whisper of tooth on card surfaces so "paper on a
    desk" is a material, not just a color. Inline SVG noise, no asset.
    ::after overlay so it stacks on top of any ruled-line background;
