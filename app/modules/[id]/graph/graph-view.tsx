@@ -752,7 +752,7 @@ export default function GraphView({
             )}
             {selectedSource && selectedSource !== hoveredTopic.id && (
               <p className="mt-1 text-xs font-medium" style={{ color: "var(--color-brand)" }}>
-                Click to set "{topicsById.get(selectedSource)?.name}" as a prerequisite.
+                Click to set &quot;{topicsById.get(selectedSource)?.name}&quot; as a prerequisite.
               </p>
             )}
           </div>
