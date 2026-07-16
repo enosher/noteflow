@@ -157,6 +157,47 @@ async function main() {
   const { error: e4 } = await db.from('quiz_attempts').insert(attempts);
   if (e4) throw e4;
 
+  // Concept graph edges. Inheritance -> Polymorphism and Recursion ->
+  // Streams, so the graph shows real structure - and since Recursion is
+  // seeded weak, Streams demos the "gated behind a weak prerequisite"
+  // state without any manual setup.
+  const { error: e6 } = await db.from('topic_prerequisites').insert([
+    { topic_id: t['Polymorphism'], prerequisite_topic_id: t['Inheritance'] },
+    { topic_id: t['Streams'], prerequisite_topic_id: t['Recursion'] },
+  ]);
+  if (e6) throw e6;
+
+  // SM-2 queue. Without these rows /review opens on "all caught up",
+  // which demos the headline feature as empty. States mirror what real
+  // grading would have produced: new cards (0 reps), learning cards
+  // (1-2 reps), and one mature card - all due now or overdue so the
+  // session has a visible queue.
+  const due = (
+    prompt: string,
+    reps: number,
+    ease: number,
+    interval: number,
+    overdueDays: number
+  ) => ({
+    user_id: DEMO,
+    question_id: byPrompt[prompt].id,
+    repetitions: reps,
+    ease_factor: ease,
+    interval_days: interval,
+    due_at: daysAgo(overdueDays),
+    last_reviewed_at: reps > 0 ? daysAgo(overdueDays + interval) : null,
+  });
+
+  const { error: e7 } = await db.from('review_schedule').insert([
+    due('What two parts must every recursive method have?', 1, 2.18, 1, 2),
+    due('What happens when recursion has no reachable base case?', 0, 2.5, 0, 1),
+    due('Which method call is resolved at compile time?', 1, 2.36, 1, 0),
+    due('What is dynamic binding?', 2, 2.5, 6, 1),
+    due('Can a Java class extend two classes?', 3, 2.6, 15, 0),
+    due('Which operation is terminal: map, filter, or reduce?', 0, 2.5, 0, 3),
+  ]);
+  if (e7) throw e7;
+
   // Second and third modules: thinner, just so the sidebar isn't lonely
   const { data: others, error: e5 } = await db
     .from('modules')
@@ -177,6 +218,8 @@ async function main() {
   console.log('Demo account seeded. Log in as demo@noteflow.app and check:');
   console.log('  - Dashboard: Recursion flagged weak, Inheritance strong');
   console.log('  - Recommendations: should surface a Recursion question');
+  console.log('  - /review: 6 cards due, mixed SM-2 stages');
+  console.log('  - CS2030S graph: 2 edges, Streams gated behind weak Recursion');
 }
 
 main().catch((err) => {
