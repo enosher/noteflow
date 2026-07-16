@@ -1,5 +1,6 @@
 # NoteFlow
 
+![CI](https://github.com/enosher/noteflow/actions/workflows/ci.yml/badge.svg)
 ![Apollo 11](https://img.shields.io/badge/Orbital-Apollo%2011-blue)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black)
 ![Supabase](https://img.shields.io/badge/Supabase-green)
