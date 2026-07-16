@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:no-em-dash": "! grep -rn --include='*.tsx' --include='*.ts' '—' app/ components/ lib/"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

@@ -127,7 +127,7 @@ export default async function DashboardPage() {
   const kpis: { label: string; value: string; icon: keyof typeof ICON_PATHS; color: string }[] = [
     {
       label: "Overall accuracy",
-      value: overallAccuracy !== null ? `${overallAccuracy}%` : "—",
+      value: overallAccuracy !== null ? `${overallAccuracy}%` : "–",
       icon: "accuracy",
       color: "var(--color-brand)",
     },

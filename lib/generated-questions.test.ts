@@ -104,7 +104,7 @@ describe("isValidDraft", () => {
     ).toBe(true);
   });
 
-  it("accepts an mcq with more than 4 options — no upper bound is enforced", () => {
+  it("accepts an mcq with more than 4 options (no upper bound is enforced)", () => {
     expect(
       isValidDraft(
         mcq({

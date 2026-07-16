@@ -50,7 +50,7 @@ export default async function ModulesPage() {
       {modules.length === 0 ? (
         <div className="space-y-4">
           <EmptyState
-            message="Your modules organise everything — notes, questions, and quiz history live inside them."
+            message="Your modules organise everything: notes, questions, and quiz history live inside them."
             actionLabel="Create your first module"
             actionHref="/modules/new"
           />
