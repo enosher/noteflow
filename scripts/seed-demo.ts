@@ -144,11 +144,15 @@ async function main() {
     attempt('What is dynamic binding?', false, 8),
     attempt('Which method call is resolved at compile time?', false, 15),
     attempt('Which method call is resolved at compile time?', true, 2),
-    // Recursion: 2/5 → clearly weak, with a recent mistake to trip mistake_recency
+    // Recursion: 2/5 → clearly weak, with its most recent attempt wrong so
+    // mistake_recency trips too. Kept at 8 days (not <7) so recency_boost
+    // also fires - otherwise a topic that's merely weak can lose the
+    // recommendation slot to a less-weak topic whose last miss was more
+    // recent, which defeats the point of this seed data.
     attempt('What two parts must every recursive method have?', false, 18),
     attempt('What two parts must every recursive method have?', true, 10),
     attempt('What happens when recursion has no reachable base case?', false, 10),
-    attempt('What happens when recursion has no reachable base case?', false, 1, 45000),
+    attempt('What happens when recursion has no reachable base case?', false, 8, 45000),
     attempt('Convert an iterative sum over an array into a recursive method and state its space complexity.', true, 6),
     // Streams: 1 attempt only → below the attempts>=3 gate, shows the gate working
     attempt('Which operation is terminal: map, filter, or reduce?', true, 3),
