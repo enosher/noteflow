@@ -100,7 +100,9 @@ export const SEED_MODULES: SeedModule[] = [
       { prompt: 'What two parts must every recursive method have?', correct: false, daysAgo: 18 },
       { prompt: 'What two parts must every recursive method have?', correct: true, daysAgo: 10 },
       { prompt: 'What happens when recursion has no reachable base case?', correct: false, daysAgo: 10 },
-      { prompt: 'What happens when recursion has no reachable base case?', correct: false, daysAgo: 1, ms: 45000 },
+      // Kept at 8 days (not <7) so recency_boost fires alongside
+      // mistake_recency - see scripts/seed-demo.ts for the full rationale.
+      { prompt: 'What happens when recursion has no reachable base case?', correct: false, daysAgo: 8, ms: 45000 },
       { prompt: 'Convert an iterative sum over an array into a recursive method and state its space complexity.', correct: true, daysAgo: 6 },
       { prompt: 'Which operation is terminal: map, filter, or reduce?', correct: true, daysAgo: 3 },
     ],
