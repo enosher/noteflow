@@ -28,6 +28,21 @@ export default async function TopicDetailPage({
   const notes = notesRes.data ?? [];
   const questions = questionsRes.data ?? [];
 
+  // Subtopic-level notes, grouped by subtopic - fetched separately since
+  // it depends on the subtopic ids above.
+  const subtopicIds = subtopics.map((s) => s.id);
+  const subtopicNotesRes = subtopicIds.length
+    ? await supabase.from("notes").select("id, title, subtopic_id").in("subtopic_id", subtopicIds)
+    : { data: [] };
+  const subtopicNotes = subtopicNotesRes.data ?? [];
+  const notesBySubtopic = new Map<string, { id: string; title: string }[]>();
+  for (const n of subtopicNotes) {
+    if (!n.subtopic_id) continue;
+    const list = notesBySubtopic.get(n.subtopic_id) ?? [];
+    list.push({ id: n.id, title: n.title });
+    notesBySubtopic.set(n.subtopic_id, list);
+  }
+
   return (
     <main className="mx-auto max-w-3xl p-6 sm:p-8">
       <Breadcrumbs moduleId={moduleId} topicId={topicId} />
@@ -54,20 +69,51 @@ export default async function TopicDetailPage({
           />
         ) : (
           <ul className="space-y-2">
-            {subtopics.map((s) => (
-              <li key={s.id} className="rounded-md border border-line/70 bg-card p-3 text-sm flex items-center justify-between transition-colors hover:bg-surface">
-                <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="flex-1 flex items-center gap-3 group">
-                  <span className="group-hover:text-brand group-hover:underline">{s.name}</span>
-                  <span className="text-muted group-hover:text-brand">›</span>
-                </Link>
-                <div className="flex gap-2 ml-4">
-                  <DeleteButton
-                    action={deleteSubtopic.bind(null, s.id)}
-                    confirmMessage="Delete this subtopic?"
-                  />
-                </div>
-              </li>
-            ))}
+            {subtopics.map((s) => {
+              const sNotes = notesBySubtopic.get(s.id) ?? [];
+              return (
+                <li key={s.id} className="rounded-md border border-line/70 bg-card p-3 text-sm transition-colors hover:bg-surface">
+                  <div className="flex items-center justify-between">
+                    <Link href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/edit`} className="flex-1 flex items-center gap-3 group">
+                      <span className="group-hover:text-brand group-hover:underline">{s.name}</span>
+                      <span className="text-muted group-hover:text-brand">›</span>
+                    </Link>
+                    <div className="flex gap-2 ml-4">
+                      <DeleteButton
+                        action={deleteSubtopic.bind(null, s.id)}
+                        confirmMessage="Delete this subtopic?"
+                      />
+                    </div>
+                  </div>
+
+                  {/* This subtopic's own notes - separate from the topic-level
+                      Notes section below (notes attach to exactly one of
+                      topic or subtopic, per the DB check constraint). */}
+                  <div className="mt-2 pl-1">
+                    {sNotes.length > 0 && (
+                      <ul className="space-y-1 mb-1.5">
+                        {sNotes.map((n) => (
+                          <li key={n.id}>
+                            <Link
+                              href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`}
+                              className="text-xs text-ink hover:text-brand hover:underline"
+                            >
+                              {n.title}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <Link
+                      href={`/modules/${moduleId}/topics/${topicId}/subtopics/${s.id}/notes/new`}
+                      className="text-xs text-brand hover:underline"
+                    >
+                      + New note
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
