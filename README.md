@@ -93,7 +93,10 @@ NoteFlow provides a structured hierarchy of Modules → Topics → Subtopics tha
 Students can:
 
 - Create, edit, and delete modules, topics, and subtopics
-- Store notes under relevant topics and subtopics
+- Store notes under relevant topics and subtopics — including subtopic-only notes, which the
+  underlying `createNote` action always supported but had no dedicated entry point until a
+  manual QA pass caught the gap and a `subtopics/[subtopicId]/notes/new` route was added to
+  close it
 - Import notes by pasting markdown content directly into the editor
 - View rendered markdown while preserving the original markdown source
 - Create practice questions linked to topics
@@ -335,6 +338,53 @@ Notes must be attached to exactly one parent - either a topic or a subtopic, nev
 - `time_taken_ms` (integer, nullable)
 - `attempted_at` (timestamp)
 
+The following four tables/columns were added in Milestone 3 (`docs/m3_schema.sql`); the
+tables above are the Milestone 2 base (`docs/m2_schema.sql`).
+
+#### review_schedule
+
+one row per `(user, question)`: current SM-2 state
+- `id` (UUID, primary key)
+- `user_id` (UUID, foreign key -> profiles)
+- `question_id` (UUID, foreign key -> questions)
+- `ease_factor` (real, floored at 1.3 by a check constraint)
+- `interval_days` (integer)
+- `repetitions` (integer)
+- `due_at` (timestamp)
+- `last_reviewed_at` (timestamp, nullable)
+- `created_at`, `updated_at` (timestamps)
+
+Unique on `(user_id, question_id)`, so each question has at most one active review state per
+user.
+
+#### topic_prerequisites
+
+a directed edge for the concept graph: `topic_id` requires `prerequisite_topic_id`
+- `id` (UUID, primary key)
+- `topic_id` (UUID, foreign key -> topics)
+- `prerequisite_topic_id` (UUID, foreign key -> topics)
+- `created_at` (timestamp)
+
+A check constraint rejects self-edges (`topic_id <> prerequisite_topic_id`); a database
+trigger rejects edges spanning two different modules, since a plain `CHECK` cannot join
+against `topics` to compare both endpoints' `module_id`. Multi-step cycles are rejected in
+application code (`lib/prereq.ts`), not the database — see Concept Graph below.
+
+#### ai_generation_log
+
+one row per Gemini call attempt, backing a shared daily generation cap
+- `id` (UUID, primary key)
+- `called_at` (timestamp)
+
+No `user_id`: the single `GEMINI_API_KEY` on this deployment is shared across every tester,
+not owned per-user, so RLS permits any signed-in user to read and insert rather than scoping
+to a specific owner.
+
+#### questions.source (added column)
+
+`text`, `'manual' | 'ai'`, default `'manual'` — tags whether a question was hand-written or
+AI-generated. Existing rows needed no backfill since the default covers them.
+
 All mutable tables include an `updated_at` timestamp column, automatically maintained by a shared trigger function.
 
 Topic accuracy is computed on demand through server actions that aggregate `quiz_attempts` by topic rather than being stored in a separate cached table. This avoids cache invalidation complexity: a cached table would need updating on every quiz attempt, adding write overhead and the risk of stale dashboard data. The trade-off is slightly higher read overhead per dashboard load, which is acceptable at the current scale.
@@ -381,6 +431,8 @@ We deliberately chose a weighted scoring model instead of FSRS for Milestone 2.
 
 FSRS assumes relatively stable review schedules and larger review histories. In contrast, university students often revise irregularly around assignment and examination periods. A weighted scoring model better reflects the available data, remains explainable to students, and can be inspected through the dashboard's recommendation score breakdown view.
 
+The formula's interpretability paid off during M3 manual QA: the demo account's recommendation was surfacing a Polymorphism question over a weaker Recursion topic, contradicting the account's own documented narrative. Because every term is a named, inspectable function, the cause was traceable directly rather than treated as a black-box anomaly — the seed data's attempt timestamp sat just outside the `recency_boost` window, zeroing out a term the narrative assumed would fire. The formula was working exactly as coded; only the seed data's timestamp didn't match its own story. See Known Issue `REC-01-MISMATCH` in `docs/manual-test-log.md` for the fix.
+
 ## Implementation Challenges
 
 ### Supabase Nested Embed Type Casting
@@ -400,6 +452,22 @@ This approach is more verbose than a single aggregate query, but it keeps Row Le
 Modules reference `profiles.id`, so a profile row must exist before a user can create their first module. During development, this created a failure mode where users who signed up before the profile trigger existed could authenticate successfully but fail when creating modules because the foreign key target was missing.
 
 The fix was to add a `handle_new_user` database trigger that inserts a matching row into `profiles` whenever Supabase Auth creates a new user. This keeps application data aligned with authentication state and avoids treating a missing profile row as an application-level permissions issue.
+
+### Demo Account Staleness
+
+The shared `demo@noteflow.app` login is one account, reused by every visitor who clicks
+"Try the demo." A manual QA pass caught the consequence of that: one session's graded
+reviews, added notes, and quiz attempts persisted into the next visitor's "first look" at
+the app, quietly drifting the demo away from its intended seeded state — including once
+producing a false alarm where `/review` appeared to show zero cards due, which was actually
+just SM-2's minimum one-day interval, not a bug, but only obvious after checking.
+
+The fix runs `seedDemoAccountData()` (extracted into `lib/seed-demo-data.ts`, shared with
+the CLI seeding script) immediately before logout, and only when the session's own user
+matches `DEMO_EMAIL`. Because it runs as the caller's authenticated session rather than a
+service-role client, Row Level Security scopes every delete and insert to `auth.uid()` by
+construction — the reset can only ever act on the account that is actually logged in right
+now, never an arbitrary one, even if the check above it were somehow bypassed.
 
 ### Keeping Recommendation Scores and Breakdowns in Sync
 
@@ -453,14 +521,20 @@ Two smaller additions were also made beyond the committed scope: a markdown note
 | Week 3 | 16-22 Jun | Implemented question server actions; built quiz-taking flow with state machine, timer, and attempt recording; implemented weak-topic detection; built recommendation algorithm in `lib/recommender.ts`; added 19 Vitest unit tests; implemented markdown import page, debug score breakdown view, and NavBar | Built question creation UI; built quiz start, answer, and results screens; built dashboard UI showing per-topic accuracy and weak topics; built markdown paste import UI |
 | Week 4 | 23-29 Jun | Code comments audit, bug-fix sweeps, and README technical sections including algorithm, software engineering practices, and development plan | Manual system testing; architecture, page flow, and ER diagrams; M2 video recording; and README documentation sections |
 
-### Milestone 3 (30 June - 27 July) - Planned
+### Milestone 3 (30 June - 27 July)
 
-| Week | Dates | Focus |
-|---|---|---|
-| Week 1 | 30 Jun - 6 Jul | AI question generation design and spaced repetition planning |
-| Week 2 | 7-13 Jul | Concept graph and prerequisite mapping |
-| Week 3 | 14-20 Jul | User testing with NUS students and iteration based on feedback |
-| Week 4 | 21-27 Jul | Final documentation, performance optimisation, and submission prep |
+M3 work was more back-loaded and more Enosh-heavy than the original plan assumed. Week 1
+has no logged hours from either team member (a gap between the M2 submission push and M3
+restarting). Spencer's planned M3 work — user testing and the demo video — has not started
+as of this documentation pass (18 July); it is not fabricated here, and `docs/project-log.md`
+is the source of truth once it does.
+
+| Week | Dates | Enosh (data layer and backend) | Spencer (UI, testing, and video) |
+|---|---|---|---|
+| Week 1 | 30 Jun - 6 Jul | No logged hours | No logged hours |
+| Week 2 | 7-13 Jul | Error handling and first-run polish: `SubmitButton` pending-state rollout across 10 forms, shared friendly-error translation (`lib/errors.ts`) plus a route-level error boundary, dark/light theme tokens and toggle; root-caused and backfilled 4 orphaned `profiles` rows behind the M2 evaluator crash reports; built self-service sample-data seeding and one-click demo login. Spaced repetition: SM-2 core with 12 boundary tests, review backend actions, `/review` page and session UI. Concept graph: prerequisites schema, cycle-detection and topological-layout library (12 tests), graph server actions, interactive SVG graph view, force-simulation physics (13 tests), dynamic canvas rewrite with pan/zoom/minimap. AI question generation: validation and dedup library (46 tests), Gemini integration, generation review UI, a production error-redaction fix, a model swap after `gemini-2.5-flash` was deprecated ahead of schedule, a response-truncation fix, and a shared daily generation cap. Visual design-token migration across ~25 page files. | No logged hours |
+| Week 3 | 14-20 Jul | Manual QA pass across 37 test cases (`docs/manual-test-log.md`), including root-causing and fixing a recommendation-scoring bug (see Known Issue `REC-01-MISMATCH` below) and building a reset-on-logout mechanism for the shared demo account. README update for M3 (this pass). | Not yet run: user testing (5-7 participants) |
+| Week 4 | 21-27 Jul | Final documentation, remaining bug fixes, submission prep | Planned: user testing round, M3 demo video with live screen recording |
 
 ## Software Engineering Practices
 
@@ -560,7 +634,7 @@ Several features were deliberately deferred or cut to ensure reliable delivery o
 
 - **Collaborative Study Groups** — cut entirely; the core revision workflow does not require collaboration and the added complexity would have displaced higher-priority features
 - **PDF import** — deferred; markdown paste covers the primary use case with significantly less implementation risk
-- **File upload UI** — deferred; the database schema and Supabase Storage bucket are configured, but the upload interface was cut to keep Milestone 2 focused on the quiz and recommendation workflows
+- **File upload UI** — deferred; the database schema and Supabase Storage bucket are configured, but the upload interface was cut to keep Milestone 2 focused on the quiz and recommendation workflows. Built in Milestone 3 (see Changes Made under User Testing) and verified working in the M3 manual QA pass, including a signed-URL round trip on the live deployment.
 - **FSRS scheduling algorithm** — replaced with a weighted scoring model for the reasons described in the Recommendation Algorithm section
 - **Content types (important links and formula summaries)** — listed as planned content types per topic in the Milestone 1 README; not implemented in Milestone 2 and deferred pending demand from user testing
 - **Dashboard accuracy trends and strong topic highlighting** — the Milestone 1 plan described showing accuracy trends over time and explicitly highlighting strong topics; the current dashboard shows current per-topic accuracy but historical trend charting is deferred to Milestone 3
@@ -645,11 +719,14 @@ Testers were given a shared task sheet, the NoteFlow User Testing Form, containi
 
 ### Changes Made
 
-To address the navigation feedback, we added a chevron (`›`) and hover colour to topic, note, subtopic, and question cards so clickable cards are easier to recognise. The request for post-answer model answer display has been noted for Milestone 3, and the file upload interface will also be improved in Milestone 3 once the upload UI is built on top of the existing Supabase Storage schema.
+To address the navigation feedback, we added a chevron (`›`) and hover colour to topic, note, subtopic, and question cards so clickable cards are easier to recognise. The file upload interface was built in Milestone 3 on top of the existing Supabase Storage schema and verified working end-to-end in manual QA. The request for post-answer model answer display is still open and has not been built as of this documentation pass.
 
 ### Milestone 3 User Testing
 
-Spencer's planned 5-7 participant Milestone 3 testing round has not been run yet as of this documentation pass. This section is therefore intentionally left as a placeholder until recruiting, method, findings, and changes made can be reported from real data.
+Not yet run as of this documentation pass (18 July 2026). The planned round is 5-7
+participants, following the same asynchronous remote method as Milestone 2. This section
+will be filled in with real participants, method, findings, and changes made once the round
+is complete — not before.
 
 ## Screenshots
 
@@ -717,6 +794,35 @@ The dashboard (Figure 14) surfaces weak-topic flags, per-topic accuracy, and the
 ![Dashboard](docs/images/m2-dashboard.png)
 *Figure 14: Dashboard*
 
+### M3 — New features
+
+**Concept graph — prerequisite mapping and weak-prerequisite gating**
+
+The concept graph (Figure 15) shows prerequisite edges between topics. Node colour reflects
+accuracy (green = mastered, red = needs practice), and a dashed ring marks a topic gated
+behind a weak prerequisite — Streams here is fully answered (100%) but still shown as gated
+because its prerequisite, Recursion, is currently a weak topic (40%).
+
+![Concept graph](docs/images/m3-graph.png)
+*Figure 15: Concept graph, showing Streams gated behind weak-prerequisite Recursion*
+
+**Spaced repetition — review queue**
+
+The review queue (Figure 16) surfaces due cards from the SM-2 scheduler, one at a time, with
+a running count of how many remain in the session.
+
+![Spaced repetition review](docs/images/m3-review.png)
+*Figure 16: Spaced repetition review queue*
+
+**AI question generation — draft and review**
+
+Generated questions (Figure 17) are shown in an editable draft-and-review screen before
+anything is saved — nothing is written to the question bank until the user explicitly accepts
+a draft.
+
+![AI question generation](docs/images/m3-ai-generation.png)
+*Figure 17: AI-generated question drafts, pending review*
+
 ## Setup Instructions
 - Credentials: demo@noteflow.app (password: noteflow)
 - Fresh sign-up also works — any new account can self-seed, no shared login required
@@ -767,7 +873,6 @@ All 114 tests should pass.
 
 ## Known Limitations
 
-- The database schema includes a `file_url` field and Supabase Storage integration, but a file upload user interface has not yet been implemented.
 - Email confirmation is disabled in Supabase for development simplicity.
 - No password reset flow has been implemented.
 - Common Postgres error cases are now translated through `friendlyMessage()` and unexpected failures are caught by `app/error.tsx`, but less common error paths may still need more user-friendly, page-specific copy.
