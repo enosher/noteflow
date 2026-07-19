@@ -658,6 +658,51 @@ This gives compile-time checking for table names, column names, query results, a
 
 This practice complements the database migration workflow by keeping the application layer aligned with the actual Supabase schema instead of relying on manually maintained TypeScript interfaces. It is an application of Single Source of Truth: the deployed database schema defines the types used by the application.
 
+### Friendly Error Translation with a Safe Fallback Boundary
+
+Raw Postgres error codes are never shown to a user directly. `lib/errors.ts` translates the handful of codes a user could actually trigger from the UI into plain English, and leaves everything else as the original message for developers to see in logs.
+
+```ts
+const FRIENDLY: Record<string, string> = {
+  '23505': 'That already exists - try a different name.',
+  '23503': 'Something this depends on is missing. Refresh and try again.',
+  '23514': "That input isn't valid here. Check the form and try again.",
+  '42501': "You don't have access to that item.",
+};
+
+export function friendlyMessage(error: { code?: string; message: string }): string {
+  return (error.code && FRIENDLY[error.code]) || error.message;
+}
+```
+
+`friendlyMessage()` is called from server actions across the app - module, topic, subtopic, note, question, quiz, and graph actions all route their Supabase errors through it before surfacing anything to the user. Anything that isn't a known code, or that throws before an action gets that far, is caught by a route-level error boundary (`app/error.tsx`), which shows a generic "something went wrong" message and a `digest` reference instead of the raw error - safe for a user to quote back in a bug report without leaking internals. This is Fail-Safe Defaults: known failure modes get a specific, helpful message, and everything else falls back to a safe, non-leaking default rather than an unhandled exception reaching the user.
+
+### Shared Pending-State Submit Button
+
+Every mutating form (module, topic, subtopic, note, question, and login) uses the same `SubmitButton` component instead of each page reimplementing its own loading state.
+
+```tsx
+export function SubmitButton({
+  children,
+  pendingText,
+  className = "rounded-md bg-brand px-4 py-2 text-white hover:bg-brand-hover",
+}: {
+  children: React.ReactNode;
+  pendingText: string;
+  className?: string;
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button type="submit" disabled={pending} className={`${className} disabled:opacity-50`}>
+      {pending ? pendingText : children}
+    </button>
+  );
+}
+```
+
+`useFormStatus()` reads pending state from the nearest parent `<form>`, so the button disables itself and swaps its label the moment a server action starts, with no per-form state wiring required. This prevents duplicate submissions during network latency and gives consistent loading feedback across every form in the app. It follows DRY: one component owns the pending-state pattern instead of every form re-implementing `useFormStatus` and a disabled/label toggle by hand.
+
 ## Project Management
 
 ### Version Control Workflow
@@ -695,7 +740,7 @@ All decisions are documented in `docs/decisions-log.md`.
 
 ## Testing
 
-NoteFlow includes 114 automated tests written using Vitest across 6 test files.
+NoteFlow includes 124 automated tests written using Vitest across 8 test files.
 
 ### Weak Topic Detection Tests (5 tests)
 
@@ -726,6 +771,36 @@ The following shows the automated test run output (see Figure 4):
 ![Vitest test run](docs/images/vitest-run.png)
 *Figure 4: Vitest test run*
 
+### SM-2 Review Scheduling Tests (10 tests)
+
+`lib/sm2.test.ts` verifies the spaced-repetition scheduler in `lib/sm2.ts`.
+
+Tests cover the three interval regimes (1 day after the first successful review, 6 days after the second, `round(previous interval x ease factor)` from the third onward), the failure path (a quality below 3 resets `repetitions` and `intervalDays` to 1 without touching `easeFactor`), the ease-factor floor at exactly `1.3`, and quality `3` as the lowest passing grade (boundary value). An out-of-range quality value outside `0`-`5` is rejected.
+
+### Prerequisite Graph Tests (12 tests)
+
+`lib/prereq.test.ts` verifies cycle detection and weak-prerequisite gating in `lib/prereq.ts`.
+
+`wouldCreateCycle` is tested against a self-edge, a simple chain, a direct 2-cycle, and a transitive 3-cycle. `blockedTopics` is tested at the weak-topic boundary (exactly 60% accuracy is not weak, exactly 3 attempts with low accuracy is), and confirms an unattempted prerequisite never blocks a topic. `topologicalLevels` checks that a topic with more than one prerequisite is placed one level past its deepest one.
+
+### Graph Layout Tests (13 tests)
+
+`lib/graph-layout.test.ts` verifies the hand-rolled force simulation in `lib/graph-layout.ts`.
+
+Tests confirm the layout's one guaranteed property - a prerequisite always renders strictly left of its dependent - holds after the simulation settles, alongside collision separation for coincident nodes, a pinned node never moving, the simulation settling rather than oscillating forever, and a sane bounding box for the settled layout.
+
+### AI Generation Validation Tests (56 tests)
+
+`lib/generated-questions.test.ts` is the largest test file, covering the validation and deduplication pipeline in `lib/generated-questions.ts` across ten `describe` blocks: draft validation (`isValidDraft`), response parsing (`parseGenerated`), duplicate detection (`isDuplicate`, `dedupe`), generation count clamping (`clampCount`), question-type normalisation (`normalizeTypes`), prompt construction, the Gemini response schema, the daily generation cap (`isOverDailyCap`), and Gemini error classification (`classifyGeminiError`).
+
+Boundary tests cover difficulty values `0`, `1`, `5`, and `6`, plus the Jaccard duplicate-detection threshold at exactly `0.8`.
+
+### Regression Guard Tests (10 tests)
+
+Two files added during M3 - `lib/shuffle.test.ts` (6 tests) and `lib/seed-data.test.ts` (4 tests) - are straightforward regression guards rather than partition/boundary-style tests.
+
+`shuffle.test.ts` checks that shuffling does not mutate the input array, preserves the same multiset of elements, keeps the same length, and handles empty and single-element arrays correctly. `seed-data.test.ts` asserts every topic in `SEED_MODULES` has at least one note with non-empty content, locking in the fix for the M3 AI-generation gap described under [User Testing](#user-testing).
+
 ### Systematic Test Design
 
 The automated tests use two systematic test design techniques: equivalence partitioning and boundary value analysis. Equivalence partitioning groups inputs that should behave the same way, while boundary value analysis targets the exact threshold values where bugs commonly appear.
@@ -745,7 +820,7 @@ Three representative examples show how this was applied:
 | `isValidDraft` / `isDuplicate` / `clampCount` | Valid/invalid per field; type allow-list | Difficulty `0` / `1` / `5` / `6`; Jaccard exactly `0.8`; count exactly `1` / `8` | `generated-questions.test.ts` (56 tests) |
 | `stepSimulation` / `graphBounds` | Coincident nodes; pinned vs free nodes | Settling threshold below `0.05` movement | `graph-layout.test.ts` (13 tests) |
 
-These 6 files - designed with equivalence partitioning and boundary value analysis, as described above - contain 114 tests. Two more files (`shuffle.test.ts`, 6 tests; `seed-data.test.ts`, 4 tests) were added during M3 as straightforward regression guards rather than partition/boundary-style tests, bringing the full suite to 124 tests across 8 files.
+These 6 files - designed with equivalence partitioning and boundary value analysis, as described above - contain 114 tests. `shuffle.test.ts` and `seed-data.test.ts` (10 tests between them, see Regression Guard Tests above) were added during M3 as straightforward regression guards rather than partition/boundary-style tests, bringing the full suite to 124 tests across 8 files.
 
 ### Manual System Testing
 
@@ -753,15 +828,17 @@ In addition to automated unit tests, the team conducted manual system testing co
 
 ## User Testing
 
-### Participants
+### Milestone 2 User Testing
+
+#### Participants
 
 Two NUS students participated in asynchronous remote testing sessions. Each session took approximately 15 to 20 minutes to complete.
 
-### Method
+#### Method
 
 Testers were given a shared task sheet, the NoteFlow User Testing Form, containing 7 structured tasks and 4 open-ended feedback questions. No facilitator was present; testers worked through the form independently using the live deployment at https://noteflow-liart.vercel.app and created real accounts as part of the flow.
 
-### Findings
+#### Findings
 
 - **Core flow works end-to-end:** Both testers completed all 7 tasks. Signup, module creation, topic creation, note creation, quiz attempts, and dashboard review all worked without testers getting stuck.
 - **File attachment UI needs clearer affordance:** Tester 1 flagged the file addition UI in the note form, suggesting that the interface could be made clearer with a more obvious button.
@@ -769,7 +846,7 @@ Testers were given a shared task sheet, the NoteFlow User Testing Form, containi
 - **Navigation affordance was not immediately obvious:** Tester 2 noted the visual inconsistency between the boxed red Delete button and the unboxed Edit link, suggesting that the interactive hierarchy was not immediately clear.
 - **Positive reception of the core concept:** Tester 1 liked the simplicity of the design and felt it would be a good way to organise notes. Both testers completed the quiz flow without difficulty.
 
-### Changes Made
+#### Changes Made
 
 To address the navigation feedback, we added a chevron (`›`) and hover colour to topic, note, subtopic, and question cards so clickable cards are easier to recognise. The file upload interface was built in Milestone 3 on top of the existing Supabase Storage schema and verified working end-to-end in manual QA. The request for post-answer model answer display is still open and has not been built as of this documentation pass.
 
