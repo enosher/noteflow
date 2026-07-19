@@ -808,7 +808,7 @@ A full persistent sidebar - the specific "one change" Tester 4 said would make t
 
 ## Screenshots
 
-The deployed application is available at https://noteflow-liart.vercel.app. The screenshots below show the authentication flow from the initial proof of concept deployment (see Figures 5–8).
+The deployed application is available at https://noteflow-liart.vercel.app. The screenshots below show the authentication flow from the initial proof of concept deployment (see Figures 5–8). These predate the M3 visual redesign of the auth pages - see Figure 27 under M3 for the current split-panel layout.
 
 ### Signup
 ![Signup](docs/images/poc-signup.png)
@@ -973,6 +973,18 @@ in light mode.
 
 ![Dashboard in dark mode](docs/images/m3-theme-toggle.png)
 *Figure 26: Dashboard with dark mode enabled via the nav bar toggle*
+
+**Login and signup — brand panel**
+
+The login and signup pages (`components/AuthBrandPanel.tsx`) gained a split-panel layout in
+M3: a fixed dark panel on the left with the value proposition and a small concept-graph motif,
+and the auth form on the right. The panel is desktop-only (`hidden ... lg:flex`) and always
+dark regardless of the light/dark toggle, since it is a brand surface rather than app content;
+only the form side on the right follows the light/dark theme. Figure 27 shows the login page
+with the form side in light mode.
+
+![Login page with brand panel](docs/images/m3-auth-brand-panel.png)
+*Figure 27: Login page, with the M3 brand panel on the left and the form in light mode*
 
 ## Setup Instructions
 - Credentials: demo@noteflow.app (password: noteflow)
