@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { QuizRunner, QuizQuestion } from "./QuizRunner";
 import EmptyState from "@/components/empty-state";
+import { shuffle } from "@/lib/shuffle";
 
 export default async function QuizPage({
   params,
@@ -31,7 +32,13 @@ export default async function QuizPage({
         <QuizRunner
           // `options` comes back from Supabase typed as `Json | null`, but
           // we know from the schema it's either null or a string array.
-          questions={questions as unknown as QuizQuestion[]}
+          // Shuffled fresh on every page load (every attempt), question
+          // order and MCQ option order both - grading compares by string
+          // value everywhere downstream, not index, so this is safe.
+          questions={shuffle(questions as unknown as QuizQuestion[]).map((q) => ({
+            ...q,
+            options: q.options ? shuffle(q.options) : q.options,
+          }))}
           moduleId={moduleId}
           topicId={topicId}
         />

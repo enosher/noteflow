@@ -145,7 +145,11 @@ export default async function DashboardPage() {
       color: "var(--mastery-strong)",
     },
     {
-      label: "Weak topics",
+      // Deliberately not "Weak topics" - that exact phrase is also the
+      // heading on the interactive pill list below, and having two
+      // things with the same name (one a static number, one clickable)
+      // is what tripped a Milestone 3 tester up.
+      label: "Weak",
       value: String(weakTopics.length),
       icon: "weak",
       color: "var(--mastery-weak)",
@@ -208,7 +212,10 @@ export default async function DashboardPage() {
           />
           {recommendation ? (
             <div>
-              <p className="text-sm text-muted">Recommended next</p>
+              {/* Bumped from muted text-sm to a bolder, brand-colored
+                  eyebrow - an M3 tester took 7 minutes to notice this
+                  label sitting above the big prompt text. */}
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand">Recommended next</p>
               <p className="mt-2 font-display text-2xl leading-snug text-ink">
                 {recommendation.prompt}
               </p>

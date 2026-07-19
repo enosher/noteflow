@@ -15,6 +15,15 @@ export default function ReviewSession({
   const [queue, setQueue] = useState(initialQueue);
   const [revealed, setRevealed] = useState(false);
   const [done, setDone] = useState(0);
+  // Tracked alongside `done` so the session-end screen can show a real
+  // score, not just a count reviewed - an M3 tester asked for at least
+  // "a score at the very end to see how well the revision went."
+  const [correctCount, setCorrectCount] = useState(0);
+  // Which MCQ option the user picked, kept separate from `revealed` so
+  // the button can be re-styled (correct/incorrect) after the pick
+  // instead of the card just vanishing - the same tester said review
+  // "never tell me whether I get it wrong or right."
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const current = queue[0];
@@ -24,7 +33,7 @@ export default function ReviewSession({
       <div className="paper animate-rise-in mt-8 rounded-lg border border-line/70 bg-card p-8 text-center">
         <p className="font-display text-lg text-ink">You&apos;re all caught up!</p>
         <p className="mt-1 text-sm text-muted">
-          You successfully reviewed {done} question{done !== 1 && "s"} in this session.
+          You got {correctCount} of {done} correct in this session.
         </p>
         <Link
           href="/dashboard"
@@ -41,7 +50,9 @@ export default function ReviewSession({
       await updateReviewSchedule(current.question_id, isCorrect);
       setQueue((q) => q.slice(1));
       setRevealed(false);
+      setSelectedOption(null);
       setDone((d) => d + 1);
+      if (isCorrect) setCorrectCount((c) => c + 1);
     });
   }
 
@@ -63,19 +74,48 @@ export default function ReviewSession({
 
       {isMcq ? (
         <div className="mt-6 space-y-2">
-          {current.options!.map((opt) => (
+          {current.options!.map((opt) => {
+            // Before revealing: plain, clickable options. After: the
+            // correct option is highlighted green, and - if the user
+            // picked a different one - their pick is highlighted red,
+            // so a wrong answer is visibly wrong instead of silently
+            // moving on to the next card.
+            const isCorrectOpt = opt === current.answer;
+            const isPicked = opt === selectedOption;
+            let style = "border-line bg-card text-ink hover:border-brand";
+            if (revealed) {
+              if (isCorrectOpt) {
+                style = "border-(--mastery-strong) bg-(--mastery-strong)/10 text-ink";
+              } else if (isPicked) {
+                style = "border-(--mastery-weak) bg-(--mastery-weak)/10 text-ink";
+              } else {
+                style = "border-line bg-card text-muted";
+              }
+            }
+            return (
+              <button
+                key={opt}
+                disabled={revealed || isPending}
+                onClick={() => {
+                  setSelectedOption(opt);
+                  setRevealed(true);
+                }}
+                className={`block w-full rounded-md border px-4 py-3 text-left text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-100 ${style}`}
+              >
+                {opt}
+              </button>
+            );
+          })}
+
+          {revealed && (
             <button
-              key={opt}
-              disabled={revealed || isPending}
-              onClick={() => {
-                setRevealed(true);
-                grade(opt === current.answer);
-              }}
-              className="block w-full rounded-md border border-line bg-card px-4 py-3 text-left text-sm text-ink transition-colors hover:border-brand focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:opacity-50"
+              disabled={isPending}
+              onClick={() => grade(selectedOption === current.answer)}
+              className="mt-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
             >
-              {opt}
+              Next
             </button>
-          ))}
+          )}
         </div>
       ) : (
         <div className="mt-6">

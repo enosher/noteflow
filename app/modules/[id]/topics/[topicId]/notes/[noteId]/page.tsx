@@ -21,9 +21,35 @@ export default async function NoteViewPage({
 
   const fileUrl = note.file_url ? await getSignedNoteFileUrl(note.file_url) : null;
 
+  // Other notes sharing this note's direct parent (subtopic if it has
+  // one, otherwise the topic), so there's a one-click way to move
+  // between notes without going back through the topic page - an M3
+  // tester said they couldn't switch between notes easily.
+  const siblingQuery = note.subtopic_id
+    ? supabase.from("notes").select("id, title").eq("subtopic_id", note.subtopic_id)
+    : supabase.from("notes").select("id, title").eq("topic_id", topicId);
+  const { data: siblingNotes } = await siblingQuery;
+  const otherNotes = (siblingNotes ?? []).filter((n) => n.id !== noteId);
+
   return (
     <main className="mx-auto max-w-2xl p-6 sm:p-8">
-      <Breadcrumbs moduleId={moduleId} topicId={topicId} />
+      <Breadcrumbs moduleId={moduleId} topicId={topicId} noteId={noteId} />
+
+      {otherNotes.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted">Other notes here:</span>
+          {otherNotes.map((n) => (
+            <Link
+              key={n.id}
+              href={`/modules/${moduleId}/topics/${topicId}/notes/${n.id}`}
+              className="rounded-full border border-line px-2.5 py-1 text-ink transition-colors hover:border-brand hover:text-brand"
+            >
+              {n.title}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <div className="mt-4 flex items-center justify-between mb-4">
         <h1 className="font-display text-2xl font-semibold text-ink">{note.title}</h1>
         <div className="flex gap-2">

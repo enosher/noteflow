@@ -63,6 +63,23 @@ export async function seedDemoAccountData(db: Db, userId: string): Promise<void>
       content:
         '# Recursion\n\nEvery recursive method needs:\n\n1. **Base case** - terminates without recursing\n2. **Recursive case** - reduces towards the base case\n\nStack depth is bounded by JVM stack size; prefer tail-recursive shapes or iteration for deep inputs.',
     },
+    // Polymorphism and Streams previously had no notes at all, so
+    // "Generate questions" always failed there with "no usable note
+    // content" - not a bug, just a data gap, but it's exactly what an
+    // M3 tester hit. Same text as lib/seed-data.ts's CS2030S notes, kept
+    // in sync since both seed the same module.
+    {
+      topic_id: t['Polymorphism'],
+      title: 'Polymorphism basics',
+      content:
+        '# Polymorphism\n\nA subclass reference can be treated as its superclass type, and the correct overridden method is chosen at runtime (dynamic binding).\n\n- Overriding needs the same method signature; overloading needs a different one\n- `static` methods are resolved at compile time, so they are never overridden, only hidden\n- Interfaces give polymorphism without needing a class hierarchy',
+    },
+    {
+      topic_id: t['Streams'],
+      title: 'Streams basics',
+      content:
+        '# Streams\n\nA Stream is a pipeline of intermediate operations (`map`, `filter`) ending in exactly one terminal operation (`reduce`, `collect`, `forEach`).\n\n- Streams are lazy - nothing runs until a terminal operation is called\n- A stream can only be consumed once; reusing it throws `IllegalStateException`\n- Prefer `collect(Collectors.toList())` over manually building a list in a loop',
+    },
   ]);
 
   // Question bank. difficulty spread matters: the recommender's
@@ -202,10 +219,52 @@ export async function seedDemoAccountData(db: Db, userId: string): Promise<void>
     .select();
   if (e5) throw e5;
 
+  // "Thinner" on purpose (no questions/attempts, just topics), but each
+  // topic still needs one real note - otherwise "Generate questions"
+  // fails with "no usable note content" the moment anyone clicks into
+  // one of these, same gap as CS2030S above.
+  const otherNotes: Record<string, { title: string; content: string }[]> = {
+    MA1521: [
+      {
+        title: 'Limits and continuity',
+        content:
+          "# Limits and continuity\n\n- A function is continuous at `a` if the limit as x approaches a equals f(a)\n- L'Hopital's rule only applies to 0/0 or infinity/infinity indeterminate forms\n- A removable discontinuity can often be fixed by redefining the function at a single point",
+      },
+      {
+        title: 'Derivatives and integrals',
+        content:
+          '# Derivatives and integrals\n\n- The derivative is the instantaneous rate of change; the definite integral is the signed area under a curve\n- The Fundamental Theorem of Calculus links the two - differentiation and integration are inverse operations\n- Product rule, quotient rule, and chain rule cover most derivatives you will need',
+      },
+    ],
+    ST2334: [
+      {
+        title: 'Random variables',
+        content:
+          '# Random variables\n\n- A discrete random variable takes countable values; a continuous one takes any value in a range\n- The expected value E[X] is the long-run average outcome\n- Variance measures spread: Var(X) = E[X^2] - (E[X])^2',
+      },
+      {
+        title: 'Common distributions',
+        content:
+          '# Common distributions\n\n- Binomial: number of successes in n independent trials with a fixed success probability p\n- Normal: symmetric, bell-shaped, defined by its mean and standard deviation\n- The Central Limit Theorem is why the normal distribution shows up so often, even for non-normal underlying data',
+      },
+    ],
+  };
+
   for (const m of others) {
-    await db.from('topics').insert([
-      { module_id: m.id, name: 'Week 1 fundamentals', order_index: 0 },
-      { module_id: m.id, name: 'Week 2 core concepts', order_index: 1 },
+    const { data: otherTopics, error: eOtherTopics } = await db
+      .from('topics')
+      .insert([
+        { module_id: m.id, name: 'Week 1 fundamentals', order_index: 0 },
+        { module_id: m.id, name: 'Week 2 core concepts', order_index: 1 },
+      ])
+      .select();
+    if (eOtherTopics) throw eOtherTopics;
+
+    const notesForModule = otherNotes[m.code] ?? [];
+    const { error: eOtherNotes } = await db.from('notes').insert([
+      { topic_id: otherTopics[0].id, title: notesForModule[0].title, content: notesForModule[0].content },
+      { topic_id: otherTopics[1].id, title: notesForModule[1].title, content: notesForModule[1].content },
     ]);
+    if (eOtherNotes) throw eOtherNotes;
   }
 }
