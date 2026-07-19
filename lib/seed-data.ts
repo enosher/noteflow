@@ -73,6 +73,23 @@ export const SEED_MODULES: SeedModule[] = [
         content:
           '# Recursion\n\nEvery recursive method needs:\n\n1. **Base case** - terminates without recursing\n2. **Recursive case** - reduces towards the base case\n\nStack depth is bounded by JVM stack size; prefer tail-recursive shapes or iteration for deep inputs.',
       },
+      // Polymorphism and Streams previously had no notes at all, so
+      // "Generate questions" always failed there with "no usable note
+      // content" - not a bug, just a data gap, but it's exactly what an
+      // M3 tester hit. Every topic across both seed sources should carry
+      // at least one note with real text content, per seed-data.test.ts.
+      {
+        topic: 'Polymorphism',
+        title: 'Polymorphism basics',
+        content:
+          '# Polymorphism\n\nA subclass reference can be treated as its superclass type, and the correct overridden method is chosen at runtime (dynamic binding).\n\n- Overriding needs the same method signature; overloading needs a different one\n- `static` methods are resolved at compile time, so they are never overridden, only hidden\n- Interfaces give polymorphism without needing a class hierarchy',
+      },
+      {
+        topic: 'Streams',
+        title: 'Streams basics',
+        content:
+          '# Streams\n\nA Stream is a pipeline of intermediate operations (`map`, `filter`) ending in exactly one terminal operation (`reduce`, `collect`, `forEach`).\n\n- Streams are lazy - nothing runs until a terminal operation is called\n- A stream can only be consumed once; reusing it throws `IllegalStateException`\n- Prefer `collect(Collectors.toList())` over manually building a list in a loop',
+      },
     ],
     questions: [
       { topic: 'Inheritance', prompt: 'Which keyword lets a subclass call its parent constructor?', answer: 'super', question_type: 'short_answer', difficulty: 1 },
@@ -130,6 +147,18 @@ export const SEED_MODULES: SeedModule[] = [
         title: 'Charts that lie',
         content:
           '# Reading charts critically\n\nCommon tricks: truncated y-axes exaggerate small differences; dual axes with mismatched scales can imply a false relationship; pie charts that do not sum to 100% are a red flag.',
+      },
+      {
+        topic: 'Probability Basics',
+        title: 'Independence and mutual exclusivity',
+        content:
+          '# Probability basics\n\n- P(A and B) = P(A) x P(B) only when A and B are independent\n- Mutually exclusive events cannot both happen, so P(A and B) = 0\n- Independent and mutually exclusive are not the same thing - two events with nonzero probability cannot be both',
+      },
+      {
+        topic: 'Correlation vs Causation',
+        title: 'Why correlation is not causation',
+        content:
+          "# Correlation vs causation\n\nCorrelation means two variables move together; it does not mean one causes the other.\n\n- A confounding variable can drive both, e.g. hot weather raises both ice cream sales and drowning deaths\n- Reverse causation is possible - check which direction, if any, makes sense\n- A controlled experiment, not just an observed correlation, is usually needed to establish causation",
       },
     ],
     questions: [

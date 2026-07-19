@@ -554,10 +554,47 @@ export default function GraphView({
                     markerEnd={lit ? "url(#arrow-lit)" : "url(#arrow)"}
                     style={{ pointerEvents: "none" }}
                   />
+                  {/* Persistent remove badge - previously the only way to
+                      spot that an edge was removable was to already be
+                      hovering it and see the text label below, which an
+                      M3 tester never found ("failed to clear dependency
+                      on click"). This small × sits on every edge all the
+                      time, not just on hover, and is itself a second,
+                      slightly larger click target for removal. */}
+                  <g
+                    transform={`translate(${(from.x + to.x) / 2}, ${(from.y + to.y) / 2})`}
+                    style={{ cursor: "pointer" }}
+                    onPointerEnter={() => setHoveredEdge(i)}
+                    onPointerLeave={() => setHoveredEdge(null)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveEdge(edge);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <circle
+                      r={hoveredEdge === i ? 9 : 7}
+                      fill="var(--color-card)"
+                      stroke={hoveredEdge === i ? "var(--mastery-weak)" : "var(--color-line)"}
+                      strokeWidth={1.5}
+                      style={{ transition: "r 0.1s ease-out" }}
+                    />
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize="11"
+                      fontWeight="600"
+                      fill={hoveredEdge === i ? "var(--mastery-weak)" : "var(--color-muted)"}
+                      style={{ pointerEvents: "none" }}
+                    >
+                      ×
+                    </text>
+                  </g>
+
                   {hoveredEdge === i && (
                     <text
                       x={(from.x + to.x) / 2}
-                      y={(from.y + to.y) / 2 - 8}
+                      y={(from.y + to.y) / 2 - 18}
                       textAnchor="middle"
                       fontSize="11"
                       fill="var(--mastery-weak)"

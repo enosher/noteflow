@@ -33,7 +33,8 @@ A web app that helps university students organise study materials by topic, trac
 20. [Screenshots](#screenshots)
 21. [Setup Instructions](#setup-instructions)
 22. [Known Limitations](#known-limitations)
-23. [Acknowledgements](#acknowledgements)
+23. [Future Work](#future-work)
+24. [Acknowledgements](#acknowledgements)
 
 ## Targeted Level of Achievement
 
@@ -525,16 +526,17 @@ Two smaller additions were also made beyond the committed scope: a markdown note
 
 M3 work was more back-loaded and more Enosh-heavy than the original plan assumed. Week 1
 has no logged hours from either team member (a gap between the M2 submission push and M3
-restarting). Spencer's planned M3 work — user testing and the demo video — has not started
-as of this documentation pass (18 July); it is not fabricated here, and `docs/project-log.md`
-is the source of truth once it does.
+restarting). Spencer's planned M3 work — user testing and the demo video — was partly
+underway as of this documentation pass (19 July): the user testing round ran in Week 3
+(see [User Testing](#user-testing)), and the demo video is still outstanding.
+`docs/project-log.md` is the source of truth on logged hours.
 
 | Week | Dates | Enosh (data layer and backend) | Spencer (UI, testing, and video) |
 |---|---|---|---|
 | Week 1 | 30 Jun - 6 Jul | No logged hours | No logged hours |
 | Week 2 | 7-13 Jul | Error handling and first-run polish: `SubmitButton` pending-state rollout across 10 forms, shared friendly-error translation (`lib/errors.ts`) plus a route-level error boundary, dark/light theme tokens and toggle; root-caused and backfilled 4 orphaned `profiles` rows behind the M2 evaluator crash reports; built self-service sample-data seeding and one-click demo login. Spaced repetition: SM-2 core with 12 boundary tests, review backend actions, `/review` page and session UI. Concept graph: prerequisites schema, cycle-detection and topological-layout library (12 tests), graph server actions, interactive SVG graph view, force-simulation physics (13 tests), dynamic canvas rewrite with pan/zoom/minimap. AI question generation: validation and dedup library (46 tests), Gemini integration, generation review UI, a production error-redaction fix, a model swap after `gemini-2.5-flash` was deprecated ahead of schedule, a response-truncation fix, and a shared daily generation cap. Visual design-token migration across ~25 page files. | No logged hours |
-| Week 3 | 14-20 Jul | Manual QA pass across 37 test cases (`docs/manual-test-log.md`), including root-causing and fixing a recommendation-scoring bug (see Known Issue `REC-01-MISMATCH` below) and building a reset-on-logout mechanism for the shared demo account. README update for M3 (this pass). | Not yet run: user testing (5-7 participants) |
-| Week 4 | 21-27 Jul | Final documentation, remaining bug fixes, submission prep | Planned: user testing round, M3 demo video with live screen recording |
+| Week 3 | 14-20 Jul | Manual QA pass across 37 test cases (`docs/manual-test-log.md`), including root-causing and fixing a recommendation-scoring bug (see Known Issue `REC-01-MISMATCH` below) and building a reset-on-logout mechanism for the shared demo account. README update for M3 (this pass). | Ran M3 user testing: 5 participants via the same asynchronous task-sheet method as M2 (see [User Testing](#user-testing)) |
+| Week 4 | 21-27 Jul | Final documentation, remaining bug fixes, submission prep | Planned: M3 demo video with live screen recording |
 
 ## Software Engineering Practices
 
@@ -693,7 +695,7 @@ Three representative examples show how this was applied:
 | `isValidDraft` / `isDuplicate` / `clampCount` | Valid/invalid per field; type allow-list | Difficulty `0` / `1` / `5` / `6`; Jaccard exactly `0.8`; count exactly `1` / `8` | `generated-questions.test.ts` (56 tests) |
 | `stepSimulation` / `graphBounds` | Coincident nodes; pinned vs free nodes | Settling threshold below `0.05` movement | `graph-layout.test.ts` (13 tests) |
 
-The current automated test suite contains 114 tests across these 6 files.
+These 6 files - designed with equivalence partitioning and boundary value analysis, as described above - contain 114 tests. Two more files (`shuffle.test.ts`, 6 tests; `seed-data.test.ts`, 4 tests) were added during M3 as straightforward regression guards rather than partition/boundary-style tests, bringing the full suite to 124 tests across 8 files.
 
 ### Manual System Testing
 
@@ -723,10 +725,36 @@ To address the navigation feedback, we added a chevron (`›`) and hover colour 
 
 ### Milestone 3 User Testing
 
-Not yet run as of this documentation pass (18 July 2026). The planned round is 5-7
-participants, following the same asynchronous remote method as Milestone 2. This section
-will be filled in with real participants, method, findings, and changes made once the round
-is complete — not before.
+#### Participants
+
+Five students (NUS, NTU, secondary and NUS-grad) participated in asynchronous remote testing. 
+
+#### Method
+
+Testers used the same shared task-sheet format as Milestone 2, the NoteFlow "Try it yourself" document, with 8 structured tasks plus a 10-item usability Likert scale and 5 open-ended closing questions. Testers created their own account for Tasks 1-2, then loaded sample data or used the demo login for Tasks 3 onward, per the sheet's instructions, working independently against the live deployment.
+
+#### Findings
+
+- **AI question generation failed outright for multiple testers, not just underperformed:** Tester 3 tried "Generate questions" repeatedly with different notes, including AI-drafted content pasted in as a workaround, without success ("the AI is just not working... Please send help"). Tester 5's generation attempt also failed on a topic where they had uploaded a past-year exam paper as source material. Tester 4 separately found the feature "not intuitive" and said it isn't something they'd use, which is a discoverability complaint rather than a functional one.
+- **Review queue behaviour was inconsistent across testers:** Testers 1 and 2 found nothing due in the review tab and were prompted to take more quizzes instead. Tester 4 could see a "due for review" count on the dashboard but couldn't interact with it and didn't recognise the term "review cards." Tester 5 expected review to surface a summary of learning progress or a study flow, and didn't find one.
+- **No feedback on correctness after grading a review card:** Tester 3 said NoteFlow never confirmed whether their recall was right or wrong after answering a card, and suggested revealing the correct answer or showing a session-end score.
+- **Recommendation and weak-topic signals were easy to overlook:** Tester 3 took 7 minutes to notice the "Recommended next" text on the dashboard. Tester 4 found the "weak topics" heading at the top of the dashboard but couldn't interact with it, and only noticed the actual weak-topics list further down the page after a while.
+- **No persistent navigation or location indicator:** Tester 4 said there was no sidebar showing where they were in the module/topic/note hierarchy and that switching between notes was hard; in the closing questions, they named "adding the sidebar" as the one change that would get them to actually use NoteFlow during a real semester. Tester 5 similarly couldn't spot the menu bar at first glance when trying to create a module.
+- **Adding notes inside a topic wasn't discoverable:** Tester 3 created a module and topic without difficulty but didn't realise a topic card could be clicked into to add notes, since the card only exposed Edit and Delete buttons; they suggested an additional visual cue.
+- **Concept graph / prerequisite UI was unclear:** Tester 3 had to switch to the demo account before finding an existing prerequisite link, and found the gray instructional text hard to notice. Tester 5 could not complete this task at all, reporting low confidence, and said clicking failed to clear an existing dependency.
+- **Static quiz and MCQ ordering:** Tester 3 asked for randomised question order and randomised MCQ answer-option order, noting that with a fixed order, repeated practice risks testers "remembering the ABCs" rather than actually learning the material.
+- **Usability scale responses (2 of 5 testers) were mixed to negative:** Tester 4 rated NoteFlow 2/5 on "easy to use" and "would use frequently," and 4/5 on "unnecessarily complex" and "needed to learn a lot before getting going." Tester 5's scores were more positive — 4/5 on "easy to use" and "felt confident using it" — but still rated "unnecessarily complex" 2/5. The other three testers left the scale blank.
+- **Positive signal from one tester on the core dashboard concept:** Tester 3 said seeing weak topics surfaced on the dashboard let them focus there before moving to other topics, and described the overall experience as "pretty good... has potential to be very useful to students."
+
+#### Changes Made
+
+The empty review queue Testers 1 and 2 hit was a data problem, not a code bug: the demo account's `review_schedule` table was empty, so `/review` always showed "all caught up" with nothing due regardless of what a tester had just quizzed on. `scripts/seed-demo.ts` now seeds due review-schedule rows into the demo account (commit `176afa7`), and the account resets to that same seeded state on every logout via `resetDemoAccount()`, so a tester using the demo login always has real cards due. Confirmed fixed.
+
+The AI generation failures Testers 3 and 5 hit turned out to have the same root cause, traced directly rather than guessed at: `generateQuestionDrafts()` only counts a note as usable if its `content` field has real text, and a note created by uploading a file (Tester 5's PDF) has `content` left empty, since the app has no PDF-to-text extraction step. Auditing the seed data behind "Load sample data" and the demo account found the same gap independent of any upload - exactly half the seeded topics in every module had zero notes at all, so generation would have failed identically for Tester 3 on those topics regardless of Gemini. Fixed for the demo/testing path: every previously note-less topic in `lib/seed-data.ts` and `lib/seed-demo-data.ts` now has a real markdown note, locked in by a new test (`lib/seed-data.test.ts`) asserting every seeded topic has usable content. Future work: a real user who only uploads files without typing any notes will still hit this, since there's no PDF text-extraction feature - tracked in `docs/m3-ui-fixes-plan.md`.
+
+The remaining findings were addressed directly in code. The module page's topic list now has the same chevron and hover-underline treatment already used elsewhere, fixing the note-creation discoverability gap. The dashboard's duplicate "Weak topics" labeling was resolved by renaming the non-interactive KPI stat to "Weak," and "Recommended next" was given more visual weight so it reads as a heading. Quiz questions and MCQ answer options are now shuffled on every attempt (`lib/shuffle.ts`, with its own test coverage), addressing the "remembering the ABCs" concern. Review's multiple-choice cards now show right/wrong feedback and the correct answer before advancing, and the session-end screen shows a real score instead of just a count. The concept graph's prerequisite-removal control is now a persistent, always-visible marker on every connector line instead of a hover-only hit target. Breadcrumbs now extend to the note (and its subtopic, if any) instead of stopping at the topic.
+
+A full persistent sidebar - the specific "one change" Tester 4 said would make them actually use NoteFlow - has also been built (`components/Sidebar.tsx`, `components/SidebarNav.tsx`), not just scoped. It renders a module → topic → subtopic → note tree on every page once logged in, auto-expands whatever branch the current page is in, and highlights the active module/topic/note, so switching between notes no longer requires navigating back through the topic page. It's desktop-only (`hidden lg:block`) for this pass - a mobile version (collapsible drawer, hamburger toggle) was not attempted and would need its own design pass.
 
 ## Screenshots
 
@@ -794,34 +822,94 @@ The dashboard (Figure 14) surfaces weak-topic flags, per-topic accuracy, and the
 ![Dashboard](docs/images/m2-dashboard.png)
 *Figure 14: Dashboard*
 
+**Logo — enlarge on click**
+
+Clicking the NoteFlow logo in the nav bar opens it full-screen in a modal (Figure 15),
+implemented in `components/Zoom.tsx`. This shipped in M2 but was never captured in the README until now.
+
+![Logo enlarged in modal](docs/images/m2-logo-zoom.png)
+*Figure 15: Logo click-to-enlarge modal*
+
 ### M3 — New features
 
 **Concept graph — prerequisite mapping and weak-prerequisite gating**
 
-The concept graph (Figure 15) shows prerequisite edges between topics. Node colour reflects
+The concept graph (Figure 16) shows prerequisite edges between topics. Node colour reflects
 accuracy (green = mastered, red = needs practice), and a dashed ring marks a topic gated
 behind a weak prerequisite — Streams here is fully answered (100%) but still shown as gated
 because its prerequisite, Recursion, is currently a weak topic (40%).
 
 ![Concept graph](docs/images/m3-graph.png)
-*Figure 15: Concept graph, showing Streams gated behind weak-prerequisite Recursion*
+*Figure 16: Concept graph, showing Streams gated behind weak-prerequisite Recursion*
+
+**Modules list — for reference**
+
+The modules list (Figure 17) is unchanged in layout since M2 (Figure 9); included here
+alongside the module and topic updates below for a complete picture of the M3 demo account,
+now with three modules instead of the M2 demo's original set.
+
+![Modules list](docs/images/m3-modules-list.png)
+*Figure 17: Modules list*
+
+**Module detail — concept graph entry point**
+
+The module detail page (Figure 18) gained a "Concept graph" button in M3, linking to the view above.
+
+![Module detail with Concept graph button](docs/images/m3-module-detail.png)
+*Figure 18: Module detail, now with a Concept graph button*
+
+**Topic detail — AI generation entry point**
+
+The topic detail page (Figure 19) gained a "Generate questions" link in M3, next to the
+existing "+ New question" link.
+
+![Topic detail with Generate questions link](docs/images/m3-topic-detail.png)
+*Figure 19: Topic detail, now with a Generate questions link*
 
 **Spaced repetition — review queue**
 
-The review queue (Figure 16) surfaces due cards from the SM-2 scheduler, one at a time, with
-a running count of how many remain in the session.
+The review queue (Figure 20) surfaces due cards from the SM-2 scheduler, one at a time, with
+a running count of how many remain in the session. Following M3 user testing, MCQ cards now
+show right/wrong feedback and the correct answer before advancing to the next card (previously
+they graded and advanced instantly with no visible outcome), and the session-end screen shows
+a real score ("N of M correct") instead of just a count reviewed - see Changes Made under
+[User Testing](#user-testing). Figure 20 below predates that change; not yet re-captured.
 
 ![Spaced repetition review](docs/images/m3-review.png)
-*Figure 16: Spaced repetition review queue*
+*Figure 20: Spaced repetition review queue*
+
+**AI question generation — configuration**
+
+Before generating, the user picks a count (1-8) and question types (Figure 21). Long-answer
+questions are excluded from AI generation because they can't be auto-graded reliably.
+
+![AI question generation config](docs/images/m3-ai-generation-config.png)
+*Figure 21: AI question generation, configuration step*
 
 **AI question generation — draft and review**
 
-Generated questions (Figure 17) are shown in an editable draft-and-review screen before
-anything is saved — nothing is written to the question bank until the user explicitly accepts
-a draft.
+Generated questions are shown in an editable draft-and-review screen before anything is
+saved — nothing is written to the question bank until the user explicitly accepts a draft.
+Figures 22-24 show all five questions generated from one call, scrolled in sequence.
 
-![AI question generation](docs/images/m3-ai-generation.png)
-*Figure 17: AI-generated question drafts, pending review*
+![AI-generated drafts, part 1](docs/images/m3-ai-generation-draft-1.png)
+*Figure 22: AI-generated question drafts (1 of 3) — short answer and MCQ*
+
+![AI-generated drafts, part 2](docs/images/m3-ai-generation-draft-2.png)
+*Figure 23: AI-generated question drafts (2 of 3) — two more MCQs*
+
+![AI-generated drafts, part 3](docs/images/m3-ai-generation-draft-3.png)
+*Figure 24: AI-generated question drafts (3 of 3), with the "Accept & save 5 questions" action still unclicked*
+
+**Dashboard — spaced repetition and mastery tiers**
+
+M3 added two elements to the M2 dashboard (Figure 14): a "Due for review" count sourced from
+`review_schedule`, and a three-tier "Mastery breakdown" (weak/improving/strong) computed by
+`components/mastery-dot.tsx`. Figure 25 shows both alongside the M2-era weak-topics and
+accuracy sections.
+
+![Dashboard with mastery breakdown and due-for-review](docs/images/m3-dashboard.png)
+*Figure 25: Dashboard, with M3's mastery breakdown and due-for-review count*
 
 ## Setup Instructions
 - Credentials: demo@noteflow.app (password: noteflow)
@@ -862,7 +950,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-own-anon-key
    npx vitest run
 ```
 
-All 114 tests should pass.
+All 124 tests should pass.
 
 5. Run the development server:
 ```bash
@@ -878,10 +966,14 @@ All 114 tests should pass.
 - Common Postgres error cases are now translated through `friendlyMessage()` and unexpected failures are caught by `app/error.tsx`, but less common error paths may still need more user-friendly, page-specific copy.
 - No rate limiting is currently applied to authentication endpoints.
 - Concept graph prerequisites are limited to topics within the same module. Cross-module prerequisite edges are recognised as useful but deferred.
-- Generated-question quality depends heavily on the completeness and clarity of the user's notes. If the notes are thin, there is no fallback source of trusted course content.
+- Generated-question quality depends heavily on the completeness and clarity of the user's notes, and there is no fallback source of trusted course content if notes are thin. More precisely (found during M3 user testing, see [User Testing](#user-testing)): a note created by uploading a file only, with no typed or pasted text, contributes zero content to generation - there is no PDF/file text-extraction step, so the topic looks note-less even with a file attached. See [Future Work](#future-work).
 - `long_answer` questions are still auto-marked correct in the quiz flow. AI generation excludes them, but manually created long-answer questions can still inflate accuracy statistics.
 - The app UI still needs a clear disclosure that the shared free-tier Gemini setup may allow Google to train on submitted study notes and generated outputs.
 - The shared AI-generation cap of 40 calls per 24 hours is enforced server-side, but there is no UI indicator showing remaining quota. A capped user currently sees only a generic failure message.
+
+## Future Work
+
+- **PDF / file text extraction for AI question generation.** Uncovered during M3 user testing (see [User Testing](#user-testing) and the Known Limitations note above): a note created by uploading a file, with no typed or pasted text alongside it, never contributes content to `generateQuestionDrafts()`, since there is no text-extraction step for uploads. A real user who only uploads PDFs will hit "no usable note content" the same way an M3 tester did. Two options were scoped in `docs/m3-ui-fixes-plan.md` but not built for M3: add a server-side PDF-to-text extraction step (e.g. `pdf-parse`) so an uploaded file also populates `content`, which is real work given parsing quality varies and a serverless function has time/memory limits; or leave file-only notes unsupported for generation but say so explicitly next to the file upload field in the note UI, not just in this README. Given the M3 deadline, this was deprioritised in favour of fixing the demo/testing-facing version of the same gap (see Changes Made under Milestone 3 User Testing).
 
 ## Acknowledgements
 

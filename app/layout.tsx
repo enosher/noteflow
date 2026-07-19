@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Fraunces, Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
+import { Sidebar } from "@/components/Sidebar";
 import { ThemeProvider } from "next-themes";
 
 // Display face for headings and hero moments - a serif with real
@@ -47,7 +48,13 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NavBar />
-          {children}
+          {/* Sidebar renders null when logged out, so this row is a
+              no-op on /login and /signup - same self-check pattern
+              NavBar already uses. */}
+          <div className="flex flex-1">
+            <Sidebar />
+            <div className="min-w-0 flex-1">{children}</div>
+          </div>
         </ThemeProvider>
       </body>
     </html>

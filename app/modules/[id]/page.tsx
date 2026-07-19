@@ -84,11 +84,12 @@ export default async function ModuleDetailPage({
         <ul className="paper animate-rise-in divide-y divide-line/70 overflow-hidden rounded-lg border border-line/70 bg-card">
           {topics.map((t) => (
             <li key={t.id} className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-surface">
-              <Link href={`/modules/${id}/topics/${t.id}`} className="flex flex-1 items-center gap-3">
-                <div>
-                  <div className="font-medium text-ink">{t.name}</div>
+              <Link href={`/modules/${id}/topics/${t.id}`} className="group flex flex-1 items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-medium text-ink group-hover:text-brand group-hover:underline">{t.name}</div>
                   {t.description && <div className="mt-0.5 text-sm text-muted">{t.description}</div>}
                 </div>
+                <span className="text-muted group-hover:text-brand">›</span>
               </Link>
               <div className="flex shrink-0 items-center gap-3">
                 <Link
