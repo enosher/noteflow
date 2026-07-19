@@ -209,6 +209,185 @@ export async function seedDemoAccountData(db: Db, userId: string): Promise<void>
   ]);
   if (e7) throw e7;
 
+  // GEA1000: a second full narrative module (topics, notes, questions,
+  // attempt history), same content as lib/seed-data.ts's GEA1000 entry,
+  // kept in sync for the same reason as the CS2030S notes above. Added
+  // so the demo account isn't CS-only - the README already explains why
+  // GEA1000 exists ("so non-CS evaluators/students have a module that
+  // isn't a programming course"), but until now that only applied to
+  // the separate "Load sample data" flow, not the demo login.
+  //
+  // Wrapped in its own block so `topics`, `t`, `bank`, and `attempt`
+  // can reuse the same short names as the CS2030S section above without
+  // redeclaring them in the same function scope.
+  {
+    const { data: gea1000, error: eg1 } = await db
+      .from('modules')
+      .insert({
+        user_id: userId,
+        code: 'GEA1000',
+        name: 'Quantitative Reasoning',
+        description:
+          'Descriptive stats, probability, and reading data critically. Demo module for non-CS students.',
+      })
+      .select()
+      .single();
+    if (eg1) throw eg1;
+
+    const { data: topics, error: eg2 } = await db
+      .from('topics')
+      .insert([
+        { module_id: gea1000.id, name: 'Descriptive Statistics', order_index: 0 },
+        { module_id: gea1000.id, name: 'Probability Basics', order_index: 1 },
+        { module_id: gea1000.id, name: 'Data Visualization Fallacies', order_index: 2 },
+        { module_id: gea1000.id, name: 'Correlation vs Causation', order_index: 3 },
+      ])
+      .select();
+    if (eg2) throw eg2;
+
+    const t = Object.fromEntries(topics.map((x) => [x.name, x.id]));
+
+    const { error: eg3 } = await db.from('notes').insert([
+      {
+        topic_id: t['Descriptive Statistics'],
+        title: 'Mean, median, mode',
+        content:
+          '# Descriptive statistics\n\n- **Mean** - sensitive to outliers\n- **Median** - the middle value; robust to outliers\n- **Mode** - most frequent value; only measure that works on categorical data\n\nStandard deviation uses every point, so it is a better spread measure than range.',
+      },
+      {
+        topic_id: t['Data Visualization Fallacies'],
+        title: 'Charts that lie',
+        content:
+          '# Reading charts critically\n\nCommon tricks: truncated y-axes exaggerate small differences; dual axes with mismatched scales can imply a false relationship; pie charts that do not sum to 100% are a red flag.',
+      },
+      {
+        topic_id: t['Probability Basics'],
+        title: 'Independence and mutual exclusivity',
+        content:
+          '# Probability basics\n\n- P(A and B) = P(A) x P(B) only when A and B are independent\n- Mutually exclusive events cannot both happen, so P(A and B) = 0\n- Independent and mutually exclusive are not the same thing - two events with nonzero probability cannot be both',
+      },
+      {
+        topic_id: t['Correlation vs Causation'],
+        title: 'Why correlation is not causation',
+        content:
+          "# Correlation vs causation\n\nCorrelation means two variables move together; it does not mean one causes the other.\n\n- A confounding variable can drive both, e.g. hot weather raises both ice cream sales and drowning deaths\n- Reverse causation is possible - check which direction, if any, makes sense\n- A controlled experiment, not just an observed correlation, is usually needed to establish causation",
+      },
+    ]);
+    if (eg3) throw eg3;
+
+    type Q = {
+      topic: string;
+      prompt: string;
+      answer: string;
+      question_type: 'mcq' | 'short_answer' | 'long_answer';
+      options?: string[];
+      difficulty: number;
+    };
+    const bank: Q[] = [
+      { topic: 'Descriptive Statistics', prompt: 'Which measure of central tendency is most affected by outliers?', answer: 'mean', question_type: 'short_answer', difficulty: 1 },
+      { topic: 'Descriptive Statistics', prompt: 'The median of a dataset is best described as:', answer: 'B) The middle value when sorted', question_type: 'mcq', options: ['A) The most frequent value', 'B) The middle value when sorted', 'C) The average of all values', 'D) The range of values'], difficulty: 1 },
+      { topic: 'Descriptive Statistics', prompt: 'Explain why standard deviation is preferred over range as a measure of spread.', answer: 'Standard deviation uses every data point and reflects how tightly values cluster around the mean, while range only considers the two extreme values and is highly sensitive to outliers.', question_type: 'long_answer', difficulty: 3 },
+      { topic: 'Probability Basics', prompt: 'What is the probability of two independent events both occurring, in terms of their individual probabilities?', answer: 'The product of their individual probabilities', question_type: 'short_answer', difficulty: 2 },
+      { topic: 'Probability Basics', prompt: 'If P(A)=0.3 and P(B)=0.4 and A, B are independent, what is P(A and B)?', answer: 'B) 0.12', question_type: 'mcq', options: ['A) 0.7', 'B) 0.12', 'C) 0.1', 'D) 1.2'], difficulty: 3 },
+      { topic: 'Probability Basics', prompt: 'Explain the difference between independent and mutually exclusive events.', answer: "Independent events do not affect each other's probability of occurring; mutually exclusive events cannot both occur at the same time. Two events with nonzero probability cannot be both independent and mutually exclusive.", question_type: 'long_answer', difficulty: 3 },
+      { topic: 'Data Visualization Fallacies', prompt: 'What visual trick makes small differences look dramatic on a bar chart?', answer: 'Truncating the y-axis', question_type: 'short_answer', difficulty: 2 },
+      { topic: 'Data Visualization Fallacies', prompt: 'A pie chart with slices summing to 120% is an example of:', answer: 'B) A misleading or erroneous chart', question_type: 'mcq', options: ['A) Correct data if rounded', 'B) A misleading or erroneous chart', 'C) A 3D projection effect', 'D) Normal statistical variance'], difficulty: 2 },
+      { topic: 'Data Visualization Fallacies', prompt: 'Describe how a dual-axis chart can be used to mislead a reader, and how to check for it.', answer: 'By choosing different scales for the two y-axes, two unrelated trends can be made to look correlated or one exaggerated relative to the other; check whether both axes start at zero and use comparable scales.', question_type: 'long_answer', difficulty: 4 },
+      { topic: 'Correlation vs Causation', prompt: 'Ice cream sales and drowning deaths are correlated. The most likely explanation is:', answer: 'C) A confounding variable (hot weather) drives both', question_type: 'mcq', options: ['A) Ice cream causes drowning', 'B) Drowning causes ice cream sales', 'C) A confounding variable (hot weather) drives both', 'D) The correlation is fabricated'], difficulty: 2 },
+      { topic: 'Correlation vs Causation', prompt: 'What term describes a variable that influences two other variables, creating a spurious correlation between them?', answer: 'Confounding variable', question_type: 'short_answer', difficulty: 1 },
+    ];
+
+    const { data: questions, error: eg4 } = await db
+      .from('questions')
+      .insert(
+        bank.map((q) => ({
+          topic_id: t[q.topic],
+          prompt: q.prompt,
+          answer: q.answer,
+          question_type: q.question_type,
+          options: q.options ?? null,
+          difficulty: q.difficulty,
+        }))
+      )
+      .select();
+    if (eg4) throw eg4;
+
+    const byPrompt = Object.fromEntries(questions.map((q) => [q.prompt, q]));
+    const attempt = (prompt: string, correct: boolean, days: number, ms = 20000) => ({
+      user_id: userId,
+      question_id: byPrompt[prompt].id,
+      user_answer: correct ? byPrompt[prompt].answer : 'wrong answer',
+      is_correct: correct,
+      time_taken_ms: ms,
+      attempted_at: daysAgo(days),
+    });
+
+    const { error: eg5 } = await db.from('quiz_attempts').insert([
+      // Descriptive Statistics: 5/6 → strong topic
+      attempt('Which measure of central tendency is most affected by outliers?', true, 19),
+      attempt('Which measure of central tendency is most affected by outliers?', true, 11),
+      attempt('The median of a dataset is best described as:', true, 19),
+      attempt('The median of a dataset is best described as:', true, 4),
+      attempt('Explain why standard deviation is preferred over range as a measure of spread.', true, 11),
+      attempt('Explain why standard deviation is preferred over range as a measure of spread.', false, 20),
+      // Probability Basics: 2/4 → weak, clears the 3-attempt gate
+      attempt('What is the probability of two independent events both occurring, in terms of their individual probabilities?', true, 14),
+      attempt('What is the probability of two independent events both occurring, in terms of their individual probabilities?', false, 7),
+      attempt('If P(A)=0.3 and P(B)=0.4 and A, B are independent, what is P(A and B)?', false, 14),
+      attempt('If P(A)=0.3 and P(B)=0.4 and A, B are independent, what is P(A and B)?', true, 1),
+      // Data Visualization Fallacies: 2/5 → clearly weak
+      attempt('What visual trick makes small differences look dramatic on a bar chart?', false, 17),
+      attempt('What visual trick makes small differences look dramatic on a bar chart?', true, 9),
+      attempt('A pie chart with slices summing to 120% is an example of:', false, 9),
+      attempt('A pie chart with slices summing to 120% is an example of:', false, 1, 42000),
+      attempt('Describe how a dual-axis chart can be used to mislead a reader, and how to check for it.', true, 5),
+      // Correlation vs Causation: 1 attempt only → below the attempts>=3 gate
+      attempt('Ice cream sales and drowning deaths are correlated. The most likely explanation is:', true, 2),
+    ]);
+    if (eg5) throw eg5;
+
+    // Concept graph edges, same idea as CS2030S above: a downstream topic
+    // gated behind a currently-weak prerequisite gives the graph view real
+    // structure without any manual setup. Data Visualization Fallacies
+    // needs the Descriptive Statistics vocabulary (mean/median/spread) to
+    // even state the fallacies precisely; Correlation vs Causation leans
+    // on Probability Basics' confounding-variable idea.
+    const { error: eg6 } = await db.from('topic_prerequisites').insert([
+      { topic_id: t['Data Visualization Fallacies'], prerequisite_topic_id: t['Descriptive Statistics'] },
+      { topic_id: t['Correlation vs Causation'], prerequisite_topic_id: t['Probability Basics'] },
+    ]);
+    if (eg6) throw eg6;
+
+    // SM-2 queue, same shape as CS2030S's: new/learning/mature cards, all
+    // due now or overdue, so /review has a real GEA1000 queue too instead
+    // of only ever surfacing CS2030S cards.
+    const due = (
+      prompt: string,
+      reps: number,
+      ease: number,
+      interval: number,
+      overdueDays: number
+    ) => ({
+      user_id: userId,
+      question_id: byPrompt[prompt].id,
+      repetitions: reps,
+      ease_factor: ease,
+      interval_days: interval,
+      due_at: daysAgo(overdueDays),
+      last_reviewed_at: reps > 0 ? daysAgo(overdueDays + interval) : null,
+    });
+
+    const { error: eg7 } = await db.from('review_schedule').insert([
+      due('What visual trick makes small differences look dramatic on a bar chart?', 1, 2.2, 1, 2),
+      due('A pie chart with slices summing to 120% is an example of:', 0, 2.5, 0, 1),
+      due('What is the probability of two independent events both occurring, in terms of their individual probabilities?', 1, 2.3, 1, 0),
+      due('If P(A)=0.3 and P(B)=0.4 and A, B are independent, what is P(A and B)?', 2, 2.5, 6, 1),
+      due('Which measure of central tendency is most affected by outliers?', 3, 2.6, 15, 0),
+      due('Ice cream sales and drowning deaths are correlated. The most likely explanation is:', 0, 2.5, 0, 3),
+    ]);
+    if (eg7) throw eg7;
+  }
+
   // Second and third modules: thinner, just so the sidebar isn't lonely
   const { data: others, error: e5 } = await db
     .from('modules')

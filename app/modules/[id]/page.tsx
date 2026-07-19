@@ -41,9 +41,13 @@ export default async function ModuleDetailPage({
           <h1 className="mt-0.5 font-display text-2xl font-semibold text-ink">{mod.name}</h1>
         </div>
         <div className="flex shrink-0 gap-2">
+          {/* Solid brand fill, not just an outline like Edit - this is a
+              core feature (prerequisite mapping + weak-topic gating), not
+              a secondary action, and was easy to overlook next to the
+              visually identical Edit button before this change. */}
           <Link
             href={`/modules/${id}/graph`}
-            className="rounded-md border border-line px-3 py-1.5 text-sm text-ink transition-colors hover:bg-surface"
+            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
           >
             Concept graph
           </Link>

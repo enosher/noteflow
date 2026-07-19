@@ -154,6 +154,55 @@ Unlike simple random practice, recommendations prioritise:
 
 For full details of the scoring model and design rationale, see the **Recommendation Algorithm** section below.
 
+### 4. Spaced Repetition
+
+NoteFlow schedules per-question review timing using a lightweight SM-2 algorithm, surfaced through the `/review` queue.
+
+The review queue:
+
+- Tracks ease factor, interval, and repetition count per `(user, question)` pair
+- Extends the interval after each successful review, and resets the streak (without erasing the ease estimate already learned) after a failed one
+- Answers "what is due today", a distinct question from the recommender's "what should I drill"
+
+For the full SM-2 formula and how it differs from the adaptive recommender, see the **Spaced Repetition** section below.
+
+### 5. Concept Graph
+
+NoteFlow lets students map prerequisite relationships between topics and visualises them as an interactive graph.
+
+The concept graph:
+
+- Stores user-defined prerequisite edges, rejecting any edge that would create a cycle before it reaches the database
+- Marks a topic as gated when it sits behind a weak prerequisite (accuracy below 60% with at least 3 attempts), halving its recommendation score rather than hiding it
+- Lays out nodes so prerequisites always render to the left of their dependents
+
+For the full design rationale, including why prerequisite edges are constrained to a single module, see the **Concept Graph** section below.
+
+### 6. AI Question Generation
+
+NoteFlow can generate draft practice questions from a topic's notes using Gemini, through a draft-and-review workflow rather than a direct write into the question bank.
+
+Generation:
+
+- Is restricted to `mcq` and `short_answer` questions, since `long_answer` attempts are currently auto-graded as correct
+- Validates every draft twice, once on parse and again immediately before insertion, since a user can edit a draft in between
+- Rejects near-duplicate questions using token-overlap similarity, checked against both the topic's existing bank and the rest of the same batch
+- Is capped at 40 generation calls per 24 hours across all users, since the deployment shares one Gemini API key
+
+For the full validation pipeline and design decisions, see the **AI Question Generation** section below.
+
+### 7. Light and Dark Theme
+
+A toggle in the nav bar (`components/theme-toggle.tsx`) switches the entire app between light and dark themes.
+
+The toggle:
+
+- Defaults to the browser's system preference on first visit
+- Persists the user's choice across sessions and page reloads
+- Applies on load with no flash of the wrong theme while the page hydrates
+
+Implemented with `next-themes`, which handles system-preference detection and the flash-of-wrong-theme problem that a hand-rolled toggle would otherwise need to solve separately.
+
 ## Spaced Repetition
 
 NoteFlow uses a lightweight SM-2 scheduler for per-question review timing. For each `(user, question)` pair, the scheduler stores three pieces of state:
@@ -494,6 +543,7 @@ The two tools serve different purposes: ChatGPT provides general-purpose assista
 | TypeScript | Language | Type safety catches bugs at write-time. Familiar to team members with C++ background. |
 | Vitest | Testing | Unit test framework for TypeScript; used to verify weak-topic detection boundary conditions and recommendation scoring invariants. |
 | Tailwind CSS | Styling | Utility classes allow fast UI iteration without writing custom CSS files. |
+| next-themes | Theming | Handles the light/dark toggle and system-preference detection without a flash of the wrong theme on load. |
 | Supabase | Backend | Provides PostgreSQL, authentication, and file storage in one platform. Free tier is generous. Singapore region minimises latency. |
 | PostgreSQL | Database | Relational model suits NoteFlow's hierarchical data (modules → topics → subtopics). |
 | Vercel | Deployment | Zero-config deployment for Next.js. Auto-deploys on every push to main. Preview URLs on every PR. |
@@ -846,7 +896,10 @@ because its prerequisite, Recursion, is currently a weak topic (40%).
 
 The modules list (Figure 17) is unchanged in layout since M2 (Figure 9); included here
 alongside the module and topic updates below for a complete picture of the M3 demo account,
-now with three modules instead of the M2 demo's original set.
+now with four modules instead of the M2 demo's original set - CS2030S, MA1521, and ST2334
+as before, plus GEA1000 (added after M3 testing surfaced that it was only in the separate
+"Load sample data" flow, not the demo login itself). Figure 17 predates the GEA1000 addition
+and hasn't been re-captured.
 
 ![Modules list](docs/images/m3-modules-list.png)
 *Figure 17: Modules list*
@@ -910,6 +963,16 @@ accuracy sections.
 
 ![Dashboard with mastery breakdown and due-for-review](docs/images/m3-dashboard.png)
 *Figure 25: Dashboard, with M3's mastery breakdown and due-for-review count*
+
+**Light and dark theme — toggle in the nav bar**
+
+The nav bar toggle (`components/theme-toggle.tsx`) switches between light and dark themes,
+defaulting to the browser's system preference and persisting the choice across sessions.
+Figure 26 shows the dashboard in dark mode; every other figure in this README was captured
+in light mode.
+
+![Dashboard in dark mode](docs/images/m3-theme-toggle.png)
+*Figure 26: Dashboard with dark mode enabled via the nav bar toggle*
 
 ## Setup Instructions
 - Credentials: demo@noteflow.app (password: noteflow)
