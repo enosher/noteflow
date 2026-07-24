@@ -31,8 +31,69 @@ import {
 // of Google's own Oct 16 2026 shutdown date (see the forum thread:
 // https://discuss.ai.google.dev/t/gemini-2-5-flash-and-gemini-2-5-flash-lite-returning-404-no-longer-available-today-july-9-contradicts-oct-16-2026-shutdown-date/174267).
 // gemini-3.5-flash is Google's listed replacement, still free-tier.
-const MODEL = "gemini-3.5-flash";
-const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const PRIMARY_MODEL = "gemini-3.5-flash";
+
+// Added Jul 2026: gemini-3.5-flash has a known, ongoing Google-side bug
+// where a request combining structured output (responseSchema +
+// responseMimeType, both used below) with thinkingConfig either hangs
+// with 0 response bytes or fast-fails with a 5xx - exactly this call's
+// shape (see the forum thread: https://discuss.ai.google.dev/t/sustained-outage-14h-gemini-3-5-flash-generatecontent-hangs-indefinitely-on-structured-output-thinkingconfig-returns-0-bytes/174959).
+// gemini-3.1-flash-lite doesn't hit it, so it's the one-shot fallback
+// below rather than a second try on the same broken model.
+const FALLBACK_MODEL = "gemini-3.1-flash-lite";
+
+const GEMINI_TIMEOUT_MS = 20_000;
+
+function geminiEndpoint(model: string): string {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+}
+
+// Wraps a single Gemini call with a hard client-side timeout. Needed
+// because of the 0-byte hang described above - without an AbortController
+// here, a hung request would ride out the platform's own function
+// timeout instead of failing in a way this code can react to (i.e. by
+// trying the fallback model).
+async function callGemini(
+  model: string,
+  systemPrompt: string,
+  userPrompt: string
+): Promise<{ ok: true; res: Response } | { ok: false; timedOut: boolean }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+  try {
+    const res = await fetch(geminiEndpoint(model), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Header, not a query param - query strings are far more likely
+        // to end up logged somewhere between here and Google.
+        "x-goog-api-key": process.env.GEMINI_API_KEY ?? "",
+      },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          // Default thinkingLevel "medium" draws from this same token
+          // budget and can truncate the real JSON mid-object. Minimized
+          // since this is fact extraction, not reasoning; the generous
+          // ceiling below is backup, since "minimal" isn't a hard zero.
+          thinkingConfig: { thinkingLevel: "minimal" },
+          maxOutputTokens: 4096,
+          // responseSchema is a best-effort second layer on top of
+          // responseMimeType; parseGenerated below still validates too.
+          responseMimeType: "application/json",
+          responseSchema: GENERATION_RESPONSE_SCHEMA,
+        },
+      }),
+      signal: controller.signal,
+    });
+    return { ok: true, res };
+  } catch (e) {
+    return { ok: false, timedOut: e instanceof Error && e.name === "AbortError" };
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // Limits how much note text gets sent, so a topic with 40 subtopic notes
 // can't turn one click into a huge request. The text is just cut short,
@@ -154,45 +215,48 @@ export async function generateQuestionDrafts(
     existingPrompts,
   });
 
-  let res: Response;
-  try {
-    res = await fetch(GEMINI_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Header, not a query param - query strings are far more likely
-        // to end up logged somewhere between here and Google.
-        "x-goog-api-key": process.env.GEMINI_API_KEY ?? "",
-      },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        generationConfig: {
-          // Default thinkingLevel "medium" draws from this same token
-          // budget and can truncate the real JSON mid-object. Minimized
-          // since this is fact extraction, not reasoning; the generous
-          // ceiling below is backup, since "minimal" isn't a hard zero.
-          thinkingConfig: { thinkingLevel: "minimal" },
-          maxOutputTokens: 4096,
-          // responseSchema is a best-effort second layer on top of
-          // responseMimeType; parseGenerated below still validates too.
-          responseMimeType: "application/json",
-          responseSchema: GENERATION_RESPONSE_SCHEMA,
-        },
-      }),
-    });
-  } catch {
-    // fetch() throwing means the request never reached Google (DNS,
-    // offline, timeout) - distinct from a Gemini-side HTTP error. This
-    // runs server-side, so "check your connection" would blame the wrong machine.
-    return { ok: false, message: "Couldn't reach Gemini right now - try again in a moment." };
+  // Tries PRIMARY_MODEL first, and falls back once to FALLBACK_MODEL if
+  // it times out (the 0-byte hang bug) or Gemini's own side errors
+  // (5xx) - both are model-specific incidents, not something a second
+  // attempt against the same model would fix.
+  let attempt = await callGemini(PRIMARY_MODEL, systemPrompt, userPrompt);
+  let usedFallback = false;
+  if (!attempt.ok || (attempt.ok && attempt.res.status >= 500)) {
+    if (!attempt.ok) {
+      console.error(
+        `Gemini call to ${PRIMARY_MODEL} failed`,
+        attempt.timedOut ? "timed out" : "network error"
+      );
+    } else {
+      console.error(`Gemini call to ${PRIMARY_MODEL} returned`, attempt.res.status);
+    }
+    usedFallback = true;
+    attempt = await callGemini(FALLBACK_MODEL, systemPrompt, userPrompt);
   }
 
+  if (!attempt.ok) {
+    // Neither model reached Google in time - could be a real network
+    // problem, or (as of Jul 2026) the gemini-3.5-flash hang bug taking
+    // the fallback down with it during a wider outage. This runs
+    // server-side, so "check your connection" would blame the wrong machine.
+    return {
+      ok: false,
+      message: attempt.timedOut
+        ? "Gemini didn't respond in time - try again in a moment."
+        : "Couldn't reach Gemini right now - try again in a moment.",
+    };
+  }
+
+  const res = attempt.res;
   if (!res.ok) {
     // Real status goes to the server log; the user gets a mapped,
     // actionable line. A 429 is the free-tier rate limit - never suggest
     // billing, since that removes the free tier rather than raising the limit.
-    console.error("Gemini API error", res.status, await res.text().catch(() => ""));
+    console.error(
+      `Gemini API error (${usedFallback ? FALLBACK_MODEL : PRIMARY_MODEL})`,
+      res.status,
+      await res.text().catch(() => "")
+    );
     return { ok: false, message: classifyGeminiError(res.status) };
   }
 
