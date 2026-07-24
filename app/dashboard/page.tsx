@@ -238,12 +238,23 @@ export default async function DashboardPage() {
                   <span>not tested yet</span>
                 )}
               </p>
-              <Link
-                href={`/modules/${recommendation.module_id}/topics/${recommendation.topic_id}/quiz`}
-                className="mt-5 inline-block rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-              >
-                Practice this topic
-              </Link>
+              <div className="mt-5 flex flex-wrap items-center gap-4">
+                <Link
+                  href={`/modules/${recommendation.module_id}/topics/${recommendation.topic_id}/quiz`}
+                  className="inline-block rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+                >
+                  Practice this topic
+                </Link>
+                {/* The recommendation card never linked to its own debug/
+                    breakdown view - a tester found the breakdown only by
+                    knowing the URL. This is the missing link. */}
+                <Link
+                  href="/dashboard/recommendation"
+                  className="text-sm font-medium text-brand hover:text-brand-hover"
+                >
+                  Why this pick? →
+                </Link>
+              </div>
             </div>
           ) : (
             <p className="text-sm text-muted">
