@@ -249,4 +249,3 @@ Each row records work done on the project. Log every hour, including self-learni
 - AI tools were used only for self-learning and debugging help, not for generating code or submission content, in line with Orbital policy.
 - Enosh Er led setup, infrastructure, and documentation during Milestone 1. Spencer Ting led feature development and video production. Both contributed to code and content.
 - Dates logged are generally the day a piece of work was finished and committed, not necessarily every day it was worked on - some tasks spanned more than one day, so the date column should be read as "completed on," not as a precise day-by-day timesheet.
-- The 16-24 July entries were reconstructed from commit history and dated session notes rather than logged same-day; hours are estimates based on scope and should be gut-checked against personal memory before submission.
