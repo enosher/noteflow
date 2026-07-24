@@ -201,7 +201,12 @@ Each row records work done on the project. Log every hour, including self-learni
 | 2026-07-11 | Added more tests for AI generation - duplicate-detection threshold and recency-boundary edge cases | 1.0 |
 | 2026-07-12 | Rewrote the README - restructured the table of contents, added figure labels to all diagrams, and wrote the full M3 section for spaced repetition, the concept graph, AI question generation, error handling, and sample data | 2.5 |
 | 2026-07-12 | Visual language pass - paper-physics shadows, ruled surfaces, and a type hierarchy across around 25 page files; completed the remaining hardcoded-colour-to-token migration; merged the latest changes from main into the branch, resolving conflicts across 16 files; opened and merged the pull request | 5.0 |
-| **Total**  |                                                                                                           | **53.0** |
+| 2026-07-16 | Restored the review session's paper/ruled-paper styling after a regression; reseeded review queue and concept-graph edges into the demo account; added a CI workflow for lint, tests, and build; added a severity policy and Known Issues table to the manual test log | 3.5 |
+| 2026-07-17 | Fixed a recommendation-scoring bug caused by a stale quiz-attempt timestamp; built a reset-on-logout mechanism for the shared demo account; added a subtopic-level note creation entry point | 3.0 |
+| 2026-07-18 | README pass for Milestone 3 submission; captured and renamed the outstanding M2/M3 screenshots to match the README's figure references | 3.0 |
+| 2026-07-19 | Fixed seed-data gaps behind AI-generation failures found in user testing; added review/quiz feedback and a persistent sidebar; added GEA1000 as a second demo module; updated the README's Testing, User Testing, and auth-page sections with the remaining screenshots | 4.5 |
+| 2026-07-24 | Diagnosed a Gemini 3.5-flash outage as a Google-side bug and added a timeout plus fallback to gemini-3.1-flash-lite; regenerated the ER diagram with the missing M3 tables; redrew the poster's page-flow diagram; wrote the M3 user-testing script and guide; added an in-app link to the recommendation score-breakdown view | 4.5 |
+| **Total**  |                                                                                                           | **71.5** |
 
 ---
 
@@ -230,9 +235,9 @@ Each row records work done on the project. Log every hour, including self-learni
 | Liftoff          | 18 May 2pm SGT  | 10.5            | 11.5          | 22.0     |
 | Milestone 1      | 1 Jun 2pm SGT   | 17.0            | 30.0          | 47.0     |
 | Milestone 2      | 29 Jun 2pm SGT  | 54.5            | 104.5         | 159.0    |
-| Milestone 3      | 27 Jul 2pm SGT  | 0.0             | 53.0          | 53.0     |
+| Milestone 3      | 27 Jul 2pm SGT  | 0.0             | 71.5          | 71.5     |
 | Splashdown       | 26 Aug          | 0.0             | 0.0           | 0.0      |
-| **Running Total**|                 | **82.0**        | **199.0**     | **281.0**|
+| **Running Total**|                 | **82.0**        | **217.5**     | **299.5**|
 | **Target**       | By Splashdown   | **140**         | **140**       | **280**  |
 
 ---
@@ -244,3 +249,4 @@ Each row records work done on the project. Log every hour, including self-learni
 - AI tools were used only for self-learning and debugging help, not for generating code or submission content, in line with Orbital policy.
 - Enosh Er led setup, infrastructure, and documentation during Milestone 1. Spencer Ting led feature development and video production. Both contributed to code and content.
 - Dates logged are generally the day a piece of work was finished and committed, not necessarily every day it was worked on - some tasks spanned more than one day, so the date column should be read as "completed on," not as a precise day-by-day timesheet.
+- The 16-24 July entries were reconstructed from commit history and dated session notes rather than logged same-day; hours are estimates based on scope and should be gut-checked against personal memory before submission.

@@ -519,6 +519,12 @@ service-role client, Row Level Security scopes every delete and insert to `auth.
 construction — the reset can only ever act on the account that is actually logged in right
 now, never an arbitrary one, even if the check above it were somehow bypassed.
 
+### Gemini Outage Handling
+
+Shortly before submission, AI question generation began failing with a generic "Gemini is having trouble on its end" message. The model name was already current (`gemini-3.5-flash`, switched to on 9 July after `gemini-2.5-flash` was deprecated ahead of its listed shutdown date), so the failure wasn't a stale-model bug — it traced to a Google-side issue affecting `gemini-3.5-flash` requests that combine `responseSchema`/`responseMimeType` with `thinkingConfig`, exactly this app's request shape, which either hang with zero bytes returned or fail fast with a 5xx.
+
+Rather than wait on a Google-side fix, `generateQuestionDrafts()` now wraps the primary call in a 20-second client-side timeout (`AbortController`) and retries once against `gemini-3.1-flash-lite`, a model unaffected by the bug, before surfacing a failure to the user. This keeps the generation feature usable even while the primary model is degraded, at the cost of occasionally serving a lower-capability model for a given request.
+
 ### Keeping Recommendation Scores and Breakdowns in Sync
 
 `scoreQuestion` computes the final recommendation score, while `getScoreBreakdown` computes the four component terms separately for the dashboard debug view. These functions intentionally serve different UI needs, but they must remain mathematically consistent.
@@ -578,15 +584,15 @@ M3 work was more back-loaded and more Enosh-heavy than the original plan assumed
 has no logged hours from either team member (a gap between the M2 submission push and M3
 restarting). Spencer's planned M3 work — user testing and the demo video — was partly
 underway as of this documentation pass (19 July): the user testing round ran in Week 3
-(see [User Testing](#user-testing)), and the demo video is still outstanding.
+(see [User Testing](#user-testing)), and the demo video was recorded in Week 4.
 `docs/project-log.md` is the source of truth on logged hours.
 
 | Week | Dates | Enosh (data layer and backend) | Spencer (UI, testing, and video) |
 |---|---|---|---|
 | Week 1 | 30 Jun - 6 Jul | No logged hours | No logged hours |
 | Week 2 | 7-13 Jul | Error handling and first-run polish: `SubmitButton` pending-state rollout across 10 forms, shared friendly-error translation (`lib/errors.ts`) plus a route-level error boundary, dark/light theme tokens and toggle; root-caused and backfilled 4 orphaned `profiles` rows behind the M2 evaluator crash reports; built self-service sample-data seeding and one-click demo login. Spaced repetition: SM-2 core with 12 boundary tests, review backend actions, `/review` page and session UI. Concept graph: prerequisites schema, cycle-detection and topological-layout library (12 tests), graph server actions, interactive SVG graph view, force-simulation physics (13 tests), dynamic canvas rewrite with pan/zoom/minimap. AI question generation: validation and dedup library (46 tests), Gemini integration, generation review UI, a production error-redaction fix, a model swap after `gemini-2.5-flash` was deprecated ahead of schedule, a response-truncation fix, and a shared daily generation cap. Visual design-token migration across ~25 page files. | No logged hours |
-| Week 3 | 14-20 Jul | Manual QA pass across 37 test cases (`docs/manual-test-log.md`), including root-causing and fixing a recommendation-scoring bug (see Known Issue `REC-01-MISMATCH` below) and building a reset-on-logout mechanism for the shared demo account. README update for M3 (this pass). | Ran M3 user testing: 5 participants via the same asynchronous task-sheet method as M2 (see [User Testing](#user-testing)) |
-| Week 4 | 21-27 Jul | Final documentation, remaining bug fixes, submission prep | Planned: M3 demo video with live screen recording |
+| Week 3 | 14-20 Jul | Manual QA pass across 37 test cases (`docs/manual-test-log.md`), including root-causing and fixing a recommendation-scoring bug (see Known Issue `REC-01-MISMATCH` below); a reset-on-logout mechanism for the shared demo account; a CI workflow (lint, test, build on every PR); a severity policy and Known Issues table added to the manual test log; fixed the seed-data content gaps behind the M3 AI-generation failures, reworked review/quiz feedback, and built the persistent sidebar in response to user-testing findings (see [User Testing](#user-testing)); added GEA1000 as a second demo module; several README passes covering the M3 sections, screenshots, and the auth-page brand panel. | Ran M3 user testing: 5 participants via the same asynchronous task-sheet method as M2 (see [User Testing](#user-testing)) |
+| Week 4 | 21-27 Jul | Diagnosed and worked around a Gemini 3.5-flash outage (timeout + fallback to `gemini-3.1-flash-lite`); regenerated the ER diagram to include the four M3 schema additions and replaced the stale copy across `docs/`, `presentation/`, and `poster/`; redrew and recoloured the poster's page-flow diagram; wrote the M3 user-testing script and facilitator guide; closed a gap where the recommendation score-breakdown view had no in-app link, only reachable by typing the URL directly; final documentation and submission prep. | M3 poster and demo video with live screen recording |
 
 ## Software Engineering Practices
 
@@ -975,8 +981,7 @@ The modules list (Figure 17) is unchanged in layout since M2 (Figure 9); include
 alongside the module and topic updates below for a complete picture of the M3 demo account,
 now with four modules instead of the M2 demo's original set - CS2030S, MA1521, and ST2334
 as before, plus GEA1000 (added after M3 testing surfaced that it was only in the separate
-"Load sample data" flow, not the demo login itself). Figure 17 predates the GEA1000 addition
-and hasn't been re-captured.
+"Load sample data" flow, not the demo login itself).
 
 ![Modules list](docs/images/m3-modules-list.png)
 *Figure 17: Modules list*
@@ -1003,10 +1008,11 @@ a running count of how many remain in the session. Following M3 user testing, MC
 show right/wrong feedback and the correct answer before advancing to the next card (previously
 they graded and advanced instantly with no visible outcome), and the session-end screen shows
 a real score ("N of M correct") instead of just a count reviewed - see Changes Made under
-[User Testing](#user-testing). Figure 20 below predates that change; not yet re-captured.
+[User Testing](#user-testing). Figure 20 shows an MCQ card after answering, with the
+correct option highlighted before advancing.
 
 ![Spaced repetition review](docs/images/m3-review.png)
-*Figure 20: Spaced repetition review queue*
+*Figure 20: Spaced repetition review, showing right/wrong feedback on an MCQ card*
 
 **AI question generation — configuration**
 
