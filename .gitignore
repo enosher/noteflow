@@ -42,3 +42,7 @@ next-env.d.ts
 
 # supabase CLI cache
 supabase/.temp
+
+# must never be pushed to GitHub - large local-only assets
+/poster/
+/presentation/
