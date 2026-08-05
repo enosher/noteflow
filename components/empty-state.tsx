@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+// Generic "nothing here yet" block, reused across the module, topic, and question lists.
 export default function EmptyState({
   message,
   actionLabel,

@@ -7,6 +7,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Mirrors the "@" alias from tsconfig so tests can use the same imports as the app.
       "@": path.resolve(__dirname, "."),
     },
   },

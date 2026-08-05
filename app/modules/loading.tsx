@@ -1,5 +1,6 @@
 import Skeleton from '@/components/skeleton';
 
+// Placeholder shown while the modules list is fetched.
 export default function ModulesLoading() {
   return (
     <main className="mx-auto max-w-2xl p-6">

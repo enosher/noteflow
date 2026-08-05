@@ -6,6 +6,8 @@ import { generateQuestionDrafts, saveGeneratedQuestions } from "./actions";
 import { isValidDraft, type GeneratedQuestion, type QuestionType } from "@/lib/generated-questions";
 import Skeleton from "@/components/skeleton";
 
+// _key exists only for React's list rendering — drafts aren't saved to the
+// database yet, so they have no real id until stripLocalKey removes this field.
 type Draft = GeneratedQuestion & { _key: string };
 
 function stripLocalKey(d: Draft): GeneratedQuestion {
@@ -18,6 +20,7 @@ function stripLocalKey(d: Draft): GeneratedQuestion {
   };
 }
 
+// Also enforced on the number input's min/max attrs below.
 const MIN_COUNT = 1;
 const MAX_COUNT = 8;
 
