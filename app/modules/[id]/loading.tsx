@@ -1,5 +1,6 @@
 import Skeleton from '@/components/skeleton';
 
+// Mirrors the module detail page's structure so the swap-in feels seamless.
 export default function ModuleDetailLoading() {
   return (
     <main className="mx-auto max-w-3xl p-6">

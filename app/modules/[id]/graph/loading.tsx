@@ -1,5 +1,6 @@
 import Skeleton from '@/components/skeleton';
 
+// Roughly matches the real graph page's layout so nothing jumps once it loads.
 export default function ConceptGraphLoading() {
   return (
     <main className="mx-auto max-w-5xl p-6">

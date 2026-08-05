@@ -1,5 +1,6 @@
 import Skeleton from '@/components/skeleton';
 
+// Next.js renders this automatically while app/review/page.tsx fetches data.
 export default function ReviewLoading() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
